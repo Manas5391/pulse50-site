@@ -18,49 +18,49 @@ const parser = new Parser({
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Direct publisher feeds that provide real HD photos & full article links
+// Upgraded limits to generate ~85-100 AI-rewritten 50-word stories per run
 const FEEDS = [
   // General & India National
-  { category: "General", source: "Times of India", url: "https://timesofindia.indiatimes.com/rssfeedstopstories.cms", limit: 6 },
-  { category: "General", source: "NDTV Top Stories", url: "https://feeds.feedburner.com/ndtvnews-top-stories", limit: 6 },
-  { category: "India National", source: "The Hindu", url: "https://www.thehindu.com/news/national/feeder/default.rss", limit: 6 },
-  { category: "India National", source: "NDTV India", url: "https://feeds.feedburner.com/ndtvnews-india-news", limit: 6 },
-  { category: "India National", source: "Times of India", url: "https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms", limit: 5 },
+  { category: "General", source: "Times of India", url: "https://timesofindia.indiatimes.com/rssfeedstopstories.cms", limit: 10 },
+  { category: "General", source: "NDTV Top Stories", url: "https://feeds.feedburner.com/ndtvnews-top-stories", limit: 10 },
+  { category: "India National", source: "The Hindu", url: "https://www.thehindu.com/news/national/feeder/default.rss", limit: 10 },
+  { category: "India National", source: "NDTV India", url: "https://feeds.feedburner.com/ndtvnews-india-news", limit: 10 },
+  { category: "India National", source: "Times of India", url: "https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms", limit: 8 },
 
   // World
-  { category: "World", source: "BBC World", url: "https://feeds.bbci.co.uk/news/world/rss.xml", limit: 6 },
-  { category: "World", source: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml", limit: 5 },
-  { category: "World", source: "NDTV World", url: "https://feeds.feedburner.com/ndtvnews-world-news", limit: 5 },
+  { category: "World", source: "BBC World", url: "https://feeds.bbci.co.uk/news/world/rss.xml", limit: 10 },
+  { category: "World", source: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml", limit: 8 },
+  { category: "World", source: "NDTV World", url: "https://feeds.feedburner.com/ndtvnews-world-news", limit: 8 },
 
   // Politics
-  { category: "Politics", source: "The Hindu Politics", url: "https://www.thehindu.com/news/national/feeder/default.rss", limit: 5 },
-  { category: "Politics", source: "NDTV Politics", url: "https://feeds.feedburner.com/ndtvnews-india-news", limit: 5 },
-  { category: "Politics", source: "India Politics", url: "https://news.google.com/rss/search?q=Indian+politics+parliament+cabinet+BJP+Congress+when:2d&hl=en-IN&gl=IN&ceid=IN:en", limit: 6 },
+  { category: "Politics", source: "The Hindu Politics", url: "https://www.thehindu.com/news/national/feeder/default.rss", limit: 8 },
+  { category: "Politics", source: "NDTV Politics", url: "https://feeds.feedburner.com/ndtvnews-india-news", limit: 8 },
+  { category: "Politics", source: "India Politics", url: "https://news.google.com/rss/search?q=Indian+politics+parliament+cabinet+BJP+Congress+when:2d&hl=en-IN&gl=IN&ceid=IN:en", limit: 10 },
 
   // Sports
-  { category: "Sports", source: "BBC Sport", url: "https://feeds.bbci.co.uk/sport/rss.xml", limit: 5 },
-  { category: "Sports", source: "NDTV Sports", url: "https://feeds.feedburner.com/ndtvsports-latest", limit: 6 },
-  { category: "Sports", source: "TOI Sports", url: "https://timesofindia.indiatimes.com/rssfeeds/4719148.cms", limit: 5 },
+  { category: "Sports", source: "BBC Sport", url: "https://feeds.bbci.co.uk/sport/rss.xml", limit: 8 },
+  { category: "Sports", source: "NDTV Sports", url: "https://feeds.feedburner.com/ndtvsports-latest", limit: 10 },
+  { category: "Sports", source: "TOI Sports", url: "https://timesofindia.indiatimes.com/rssfeeds/4719148.cms", limit: 8 },
 
   // Entertainment
-  { category: "Entertainment", source: "NDTV Movies", url: "https://feeds.feedburner.com/ndtvmovies-latest", limit: 6 },
-  { category: "Entertainment", source: "TOI Entertainment", url: "https://timesofindia.indiatimes.com/rssfeeds/1081479906.cms", limit: 6 },
-  { category: "Entertainment", source: "Bollywood Hungama", url: "https://www.bollywoodhungama.com/rss/news.xml", limit: 5 },
+  { category: "Entertainment", source: "NDTV Movies", url: "https://feeds.feedburner.com/ndtvmovies-latest", limit: 10 },
+  { category: "Entertainment", source: "TOI Entertainment", url: "https://timesofindia.indiatimes.com/rssfeeds/1081479906.cms", limit: 10 },
+  { category: "Entertainment", source: "Bollywood Hungama", url: "https://www.bollywoodhungama.com/rss/news.xml", limit: 8 },
 
   // Priority States (Direct Publisher Feeds with HD Photos)
-  { category: "India States", state: "Telangana", source: "The Hindu Telangana", url: "https://www.thehindu.com/news/national/telangana/feeder/default.rss", limit: 6 },
-  { category: "India States", state: "Telangana", source: "TOI Hyderabad", url: "https://timesofindia.indiatimes.com/rssfeeds/-2128816011.cms", limit: 5 },
-  { category: "India States", state: "Andhra Pradesh", source: "The Hindu AP", url: "https://www.thehindu.com/news/national/andhra-pradesh/feeder/default.rss", limit: 5 },
-  { category: "India States", state: "Karnataka", source: "The Hindu Karnataka", url: "https://www.thehindu.com/news/national/karnataka/feeder/default.rss", limit: 5 },
-  { category: "India States", state: "Tamil Nadu", source: "The Hindu Tamil Nadu", url: "https://www.thehindu.com/news/national/tamil-nadu/feeder/default.rss", limit: 5 },
-  { category: "India States", state: "Maharashtra", source: "TOI Mumbai", url: "https://timesofindia.indiatimes.com/rssfeeds/-2128838597.cms", limit: 5 },
-  { category: "India States", state: "Kerala", source: "The Hindu Kerala", url: "https://www.thehindu.com/news/national/kerala/feeder/default.rss", limit: 5 },
+  { category: "India States", state: "Telangana", source: "The Hindu Telangana", url: "https://www.thehindu.com/news/national/telangana/feeder/default.rss", limit: 10 },
+  { category: "India States", state: "Telangana", source: "TOI Hyderabad", url: "https://timesofindia.indiatimes.com/rssfeeds/-2128816011.cms", limit: 8 },
+  { category: "India States", state: "Andhra Pradesh", source: "The Hindu AP", url: "https://www.thehindu.com/news/national/andhra-pradesh/feeder/default.rss", limit: 8 },
+  { category: "India States", state: "Karnataka", source: "The Hindu Karnataka", url: "https://www.thehindu.com/news/national/karnataka/feeder/default.rss", limit: 8 },
+  { category: "India States", state: "Tamil Nadu", source: "The Hindu Tamil Nadu", url: "https://www.thehindu.com/news/national/tamil-nadu/feeder/default.rss", limit: 8 },
+  { category: "India States", state: "Maharashtra", source: "TOI Mumbai", url: "https://timesofindia.indiatimes.com/rssfeeds/-2128838597.cms", limit: 8 },
+  { category: "India States", state: "Kerala", source: "The Hindu Kerala", url: "https://www.thehindu.com/news/national/kerala/feeder/default.rss", limit: 8 },
 
   // Podcasts (YouTube Official Feeds with HD Thumbnails + Video Embeds)
-  { category: "Podcasts", source: "Raj Shamani", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCneyi-aYq4VIBYIAQgWmk_w", limit: 4 },
-  { category: "Podcasts", source: "Lex Fridman", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCSHZKyawb77ixDdsGog4iWA", limit: 4 },
-  { category: "Podcasts", source: "Huberman Lab", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC2D2CMWXMOVWx7giW1n3LIg", limit: 4 },
-  { category: "Podcasts", source: "Diary Of A CEO", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCGq-a57w-aPwyi3pW7XLiHw", limit: 4 }
+  { category: "Podcasts", source: "Raj Shamani", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCneyi-aYq4VIBYIAQgWmk_w", limit: 5 },
+  { category: "Podcasts", source: "Lex Fridman", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCSHZKyawb77ixDdsGog4iWA", limit: 5 },
+  { category: "Podcasts", source: "Huberman Lab", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC2D2CMWXMOVWx7giW1n3LIg", limit: 5 },
+  { category: "Podcasts", source: "Diary Of A CEO", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCGq-a57w-aPwyi3pW7XLiHw", limit: 5 }
 ];
 
 const INDIAN_STATES = [
@@ -81,7 +81,7 @@ for (const state of INDIAN_STATES) {
       state,
       source: `${state} News`,
       url: `https://news.google.com/rss/search?q=${encodeURIComponent(state + " India news when:3d")}&hl=en-IN&gl=IN&ceid=IN:en`,
-      limit: 2
+      limit: 3
     });
   }
 }
@@ -102,11 +102,9 @@ function upgradeImageUrl(url) {
 }
 
 function extractFeedImage(item) {
-  // 1. YouTube thumbnail
   const ytMatch = (item.link || "").match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
   if (ytMatch) return `https://i.ytimg.com/vi/${ytMatch[1]}/hqdefault.jpg`;
 
-  // 2. RSS media fields
   const mediaUrl =
     item.mediaContent?.[0]?.$?.url ||
     item.mediaThumbnail?.[0]?.$?.url ||
@@ -114,7 +112,6 @@ function extractFeedImage(item) {
     "";
   if (upgradeImageUrl(mediaUrl)) return upgradeImageUrl(mediaUrl);
 
-  // 3. Embedded <img> inside RSS HTML
   const html = `${item.contentEncoded || ""} ${item.content || ""} ${item.summary || ""}`;
   const imgMatch = html.match(/<img[^>]+src=["']([^"'>]+)["']/i);
   if (imgMatch && upgradeImageUrl(imgMatch[1])) return upgradeImageUrl(imgMatch[1]);
@@ -122,7 +119,6 @@ function extractFeedImage(item) {
   return "";
 }
 
-// Scrape full article text AND og:image directly from the publisher page
 async function scrapeArticleAndImage(url, fallbackText, existingImg) {
   const cleanFallback = cheerio.load(fallbackText || "").text().replace(/\s+/g, " ").trim();
   if (!url || url.includes("news.google.com") || url.includes("youtube.com")) {
@@ -140,7 +136,6 @@ async function scrapeArticleAndImage(url, fallbackText, existingImg) {
     const html = await res.text();
     const $ = cheerio.load(html);
 
-    // Grab real HD og:image or twitter:image if RSS lacked an image
     let pageImg = existingImg;
     if (!pageImg) {
       const ogImg =
@@ -213,7 +208,6 @@ Article Facts: ${articleText}`;
     }
   }
 
-  // Clean factual fallback if API briefly rate-limits (complete sentences, no headline repeat)
   let clean = cheerio.load(articleText || "").text().replace(/\s+/g, " ").trim();
   if (clean.toLowerCase().startsWith(title.toLowerCase().slice(0, 24))) {
     clean = clean.slice(title.length).replace(/^[:\-–—.,|\s]+/, "").trim();
@@ -246,11 +240,15 @@ async function run() {
   const seen = new Set();
 
   for (const feed of FEEDS) {
+    if (results.length >= 100) break; // Cap each batch at 100 fresh stories
+
     try {
       const parsed = await parser.parseURL(feed.url);
-      const items = (parsed.items || []).slice(0, feed.limit || 5);
+      const items = (parsed.items || []).slice(0, feed.limit || 8);
 
       for (const item of items) {
+        if (results.length >= 100) break;
+
         const cleanTitle = (item.title || "")
           .replace(/\s+[-|–—]\s+[^-|–—]+$/, "")
           .replace(/#\w+/g, "")
