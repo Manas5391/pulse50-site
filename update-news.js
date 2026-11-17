@@ -1,6 +1,6 @@
-const fs = require('fs');
-const Parser = require('rss-parser');
-const cheerio = require('cheerio');
+import fs from 'fs';
+import Parser from 'rss-parser';
+import * as cheerio from 'cheerio';
 
 const parser = new Parser({
   timeout: 12000,
@@ -59,7 +59,6 @@ const STATE_CITIES = {
   'West Bengal': ['kolkata', 'howrah', 'darjeeling', 'siliguri', 'durgapur']
 };
 
-// Dedicated deep feeds per category (so each tab has rich, distinct stories)
 const CATEGORY_FEEDS = [
   // Top Trending (General Front-Page Highlights)
   { url: 'https://feeds.feedburner.com/ndtvnews-top-stories', category: 'General', source: 'NDTV Top Stories', limit: 6, isTrending: true },
