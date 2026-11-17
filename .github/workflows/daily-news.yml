@@ -16,11 +16,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm install
-      - env:
+      - name: Install required packages
+        run: npm install @google/genai rss-parser cheerio
+      - name: Generate 50-word news & podcast gists
+        env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node update-news.js
-      - run: |
+      - name: Commit and push updated news.json
+        run: |
           git config user.name "Pulse50 AutoBot"
           git config user.email "bot@pulse50.app"
           git add news.json
