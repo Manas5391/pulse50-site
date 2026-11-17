@@ -5,234 +5,162 @@ import { GoogleGenAI } from "@google/genai";
 
 const parser = new Parser({
   timeout: 15000,
-  headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36" },
+  headers: { "User-Agent": "Mozilla/5.0 (compatible; Pulse50Bot/1.0)" },
   customFields: {
-    item: [
-      ["media:content", "mediaContent", { keepArray: true }],
-      ["media:thumbnail", "mediaThumbnail", { keepArray: true }],
-      ["media:group", "mediaGroup"],
-      ["content:encoded", "contentEncoded"]
-    ]
+    item: ["media:group", "media:description", "media:content", "media:thumbnail", "enclosure"]
   }
 });
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Upgraded limits to generate ~85-100 AI-rewritten 50-word stories per run
 const FEEDS = [
-  // General & India National
-  { category: "General", source: "Times of India", url: "https://timesofindia.indiatimes.com/rssfeedstopstories.cms", limit: 10 },
-  { category: "General", source: "NDTV Top Stories", url: "https://feeds.feedburner.com/ndtvnews-top-stories", limit: 10 },
-  { category: "India National", source: "The Hindu", url: "https://www.thehindu.com/news/national/feeder/default.rss", limit: 10 },
-  { category: "India National", source: "NDTV India", url: "https://feeds.feedburner.com/ndtvnews-india-news", limit: 10 },
-  { category: "India National", source: "Times of India", url: "https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms", limit: 8 },
+  // General & National
+  { category: "General", source: "Google News India", url: "https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en", limit: 6 },
+  { category: "India National", source: "The Hindu", url: "https://www.thehindu.com/news/national/feeder/default.rss", limit: 6 },
+  { category: "India National", source: "NDTV India", url: "https://feeds.feedburner.com/ndtvnews-india-news", limit: 6 },
 
   // World
-  { category: "World", source: "BBC World", url: "https://feeds.bbci.co.uk/news/world/rss.xml", limit: 10 },
-  { category: "World", source: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml", limit: 8 },
-  { category: "World", source: "NDTV World", url: "https://feeds.feedburner.com/ndtvnews-world-news", limit: 8 },
+  { category: "World", source: "BBC World", url: "https://feeds.bbci.co.uk/news/world/rss.xml", limit: 6 },
+  { category: "World", source: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml", limit: 5 },
 
-  // Politics
-  { category: "Politics", source: "The Hindu Politics", url: "https://www.thehindu.com/news/national/feeder/default.rss", limit: 8 },
-  { category: "Politics", source: "NDTV Politics", url: "https://feeds.feedburner.com/ndtvnews-india-news", limit: 8 },
-  { category: "Politics", source: "India Politics", url: "https://news.google.com/rss/search?q=Indian+politics+parliament+cabinet+BJP+Congress+when:2d&hl=en-IN&gl=IN&ceid=IN:en", limit: 10 },
+  // Politics, Sports & Entertainment
+  { category: "Politics", source: "India Politics Desk", url: "https://news.google.com/rss/search?q=India+parliament+cabinet+election+politics+when:2d&hl=en-IN&gl=IN&ceid=IN:en", limit: 7 },
+  { category: "Sports", source: "BBC Sport", url: "https://feeds.bbci.co.uk/sport/rss.xml", limit: 5 },
+  { category: "Sports", source: "India Sports Desk", url: "https://news.google.com/rss/search?q=India+cricket+BCCI+IPL+sports+when:2d&hl=en-IN&gl=IN&ceid=IN:en", limit: 5 },
+  { category: "Entertainment", source: "Entertainment Desk", url: "https://news.google.com/rss/search?q=Bollywood+Tollywood+Indian+cinema+OTT+when:2d&hl=en-IN&gl=IN&ceid=IN:en", limit: 7 },
 
-  // Sports
-  { category: "Sports", source: "BBC Sport", url: "https://feeds.bbci.co.uk/sport/rss.xml", limit: 8 },
-  { category: "Sports", source: "NDTV Sports", url: "https://feeds.feedburner.com/ndtvsports-latest", limit: 10 },
-  { category: "Sports", source: "TOI Sports", url: "https://timesofindia.indiatimes.com/rssfeeds/4719148.cms", limit: 8 },
-
-  // Entertainment
-  { category: "Entertainment", source: "NDTV Movies", url: "https://feeds.feedburner.com/ndtvmovies-latest", limit: 10 },
-  { category: "Entertainment", source: "TOI Entertainment", url: "https://timesofindia.indiatimes.com/rssfeeds/1081479906.cms", limit: 10 },
-  { category: "Entertainment", source: "Bollywood Hungama", url: "https://www.bollywoodhungama.com/rss/news.xml", limit: 8 },
-
-  // Priority States (Direct Publisher Feeds with HD Photos)
-  { category: "India States", state: "Telangana", source: "The Hindu Telangana", url: "https://www.thehindu.com/news/national/telangana/feeder/default.rss", limit: 10 },
-  { category: "India States", state: "Telangana", source: "TOI Hyderabad", url: "https://timesofindia.indiatimes.com/rssfeeds/-2128816011.cms", limit: 8 },
-  { category: "India States", state: "Andhra Pradesh", source: "The Hindu AP", url: "https://www.thehindu.com/news/national/andhra-pradesh/feeder/default.rss", limit: 8 },
-  { category: "India States", state: "Karnataka", source: "The Hindu Karnataka", url: "https://www.thehindu.com/news/national/karnataka/feeder/default.rss", limit: 8 },
-  { category: "India States", state: "Tamil Nadu", source: "The Hindu Tamil Nadu", url: "https://www.thehindu.com/news/national/tamil-nadu/feeder/default.rss", limit: 8 },
-  { category: "India States", state: "Maharashtra", source: "TOI Mumbai", url: "https://timesofindia.indiatimes.com/rssfeeds/-2128838597.cms", limit: 8 },
-  { category: "India States", state: "Kerala", source: "The Hindu Kerala", url: "https://www.thehindu.com/news/national/kerala/feeder/default.rss", limit: 8 },
-
-  // Podcasts (YouTube Official Feeds with HD Thumbnails + Video Embeds)
-  { category: "Podcasts", source: "Raj Shamani", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCneyi-aYq4VIBYIAQgWmk_w", limit: 5 },
-  { category: "Podcasts", source: "Lex Fridman", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCSHZKyawb77ixDdsGog4iWA", limit: 5 },
-  { category: "Podcasts", source: "Huberman Lab", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC2D2CMWXMOVWx7giW1n3LIg", limit: 5 },
-  { category: "Podcasts", source: "Diary Of A CEO", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCGq-a57w-aPwyi3pW7XLiHw", limit: 5 }
+  // Verified YouTube Podcast Feeds + Guaranteed Podcast News RSS Fallback
+  { category: "Podcasts", source: "Raj Shamani", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCneyi-aYq4VIBYIAQgWmk_w", limit: 3 },
+  { category: "Podcasts", source: "Nikhil Kamath", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCRvG4p8_8J1s-vG2h5q9h-Q", limit: 3 },
+  { category: "Podcasts", source: "ANI Podcast", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCtFQDgA8J8_iiwc5-KoAQlg", limit: 3 },
+  { category: "Podcasts", source: "Lex Fridman", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCSHZKyawb77ixDdsGog4iWA", limit: 3 },
+  { category: "Podcasts", source: "Huberman Lab", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC2D2CMWXMOVWx7giW1n3LIg", limit: 3 },
+  { category: "Podcasts", source: "Diary Of A CEO", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCGq-a57w-aPwyi3pW7XLiHw", limit: 3 },
+  { category: "Podcasts", source: "Podcasts Desk", url: "https://news.google.com/rss/search?q=(podcast+episode+OR+%22Figuring+Out%22+OR+%22WTF+is%22+OR+%22ANI+Podcast%22+OR+%22Lex+Fridman%22)+when:7d&hl=en-IN&gl=IN&ceid=IN:en", limit: 8 }
 ];
 
-const INDIAN_STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
-  "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
-  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
-  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
-  "Uttar Pradesh", "Uttarakhand", "West Bengal"
-];
+// Domestic State-Specific Keywords (Capital + Major Cities + State Name)
+const STATE_DOMESTIC_MAP = {
+  "Andhra Pradesh": ["Andhra Pradesh", "Amaravati", "Visakhapatnam", "Vijayawada", "Tirupati"],
+  "Arunachal Pradesh": ["Arunachal Pradesh", "Itanagar", "Tawang"],
+  "Assam": ["Assam", "Guwahati", "Dispur", "Dibrugarh"],
+  "Bihar": ["Bihar", "Patna", "Gaya", "Muzaffarpur"],
+  "Chhattisgarh": ["Chhattisgarh", "Raipur", "Bilaspur", "Bastar"],
+  "Goa": ["Goa", "Panaji", "Margao"],
+  "Gujarat": ["Gujarat", "Ahmedabad", "Gandhinagar", "Surat", "Vadodara"],
+  "Haryana": ["Haryana", "Gurugram", "Faridabad", "Panipat"],
+  "Himachal Pradesh": ["Himachal Pradesh", "Shimla", "Manali", "Dharamshala"],
+  "Jharkhand": ["Jharkhand", "Ranchi", "Jamshedpur", "Dhanbad"],
+  "Karnataka": ["Karnataka", "Bengaluru", "Mysuru", "Mangaluru", "Hubballi"],
+  "Kerala": ["Kerala", "Thiruvananthapuram", "Kochi", "Kozhikode"],
+  "Madhya Pradesh": ["Madhya Pradesh", "Bhopal", "Indore", "Gwalior", "Jabalpur"],
+  "Maharashtra": ["Maharashtra", "Mumbai", "Pune", "Nagpur", "Nashik"],
+  "Manipur": ["Manipur", "Imphal"],
+  "Meghalaya": ["Meghalaya", "Shillong"],
+  "Mizoram": ["Mizoram", "Aizawl"],
+  "Nagaland": ["Nagaland", "Kohima", "Dimapur"],
+  "Odisha": ["Odisha", "Bhubaneswar", "Cuttack", "Puri", "Rourkela"],
+  "Punjab": ["Punjab", "Amritsar", "Ludhiana", "Jalandhar", "Patiala"],
+  "Rajasthan": ["Rajasthan", "Jaipur", "Jodhpur", "Udaipur", "Kota"],
+  "Sikkim": ["Sikkim", "Gangtok"],
+  "Tamil Nadu": ["Tamil Nadu", "Chennai", "Coimbatore", "Madurai"],
+  "Telangana": ["Telangana", "Hyderabad", "Warangal", "Karimnagar", "Nizamabad"],
+  "Tripura": ["Tripura", "Agartala"],
+  "Uttar Pradesh": ["Uttar Pradesh", "Lucknow", "Kanpur", "Varanasi", "Noida", "Prayagraj"],
+  "Uttarakhand": ["Uttarakhand", "Dehradun", "Haridwar", "Nainital"],
+  "West Bengal": ["West Bengal", "Kolkata", "Howrah", "Darjeeling", "Siliguri"]
+};
 
-// Add remaining states so every single one of the 28 states has dedicated coverage
-const DIRECT_STATES = new Set(["Telangana", "Andhra Pradesh", "Karnataka", "Tamil Nadu", "Maharashtra", "Kerala"]);
-for (const state of INDIAN_STATES) {
-  if (!DIRECT_STATES.has(state)) {
-    FEEDS.push({
-      category: "India States",
-      state,
-      source: `${state} News`,
-      url: `https://news.google.com/rss/search?q=${encodeURIComponent(state + " India news when:3d")}&hl=en-IN&gl=IN&ceid=IN:en`,
-      limit: 3
-    });
-  }
+// Fetch dedicated domestic governance, civic & local news per state
+for (const [state, places] of Object.entries(STATE_DOMESTIC_MAP)) {
+  const domesticQuery = `("${state}" OR "${places[1]}") (government OR CM OR district OR police OR high court OR scheme OR civic) when:3d`;
+  FEEDS.push({
+    category: "India States",
+    state,
+    source: `${state} Desk`,
+    url: `https://news.google.com/rss/search?q=${encodeURIComponent(domesticQuery)}&hl=en-IN&gl=IN&ceid=IN:en`,
+    limit: 4
+  });
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function upgradeImageUrl(url) {
-  if (!url || typeof url !== "string" || !url.startsWith("http")) return "";
-  const lower = url.toLowerCase();
-  if (lower.includes("googleusercontent") || lower.includes("gstatic") || lower.includes("logo") || lower.includes("icon") || lower.includes("1x1")) {
-    return "";
+// Strict domestic state matcher: checks HEADLINE only so general national stories don't pollute state tabs
+function detectDomesticStatesFromHeadline(headline, expectedState) {
+  const matched = new Set();
+  for (const [st, places] of Object.entries(STATE_DOMESTIC_MAP)) {
+    const regex = new RegExp(`\\b(${places.join("|")})\\b`, "i");
+    if (regex.test(headline)) {
+      matched.add(st);
+    }
   }
-  return url
-    .replace(/([?&])(w|width|h|height|quality|q)=\d+/gi, "")
-    .replace(/resize=\d+[,x]\d+/gi, "resize=1200,675")
-    .replace(/-\d{2,3}x\d{2,3}(\.(?:jpg|jpeg|png|webp))/gi, "$1")
-    .replace(/[?&]+$/, "");
+  // If fetched from a state's dedicated feed and no other state dominates the headline, keep expectedState
+  if (matched.size === 0 && expectedState) {
+    matched.add(expectedState);
+  }
+  return Array.from(matched);
 }
 
-function extractFeedImage(item) {
-  const ytMatch = (item.link || "").match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  if (ytMatch) return `https://i.ytimg.com/vi/${ytMatch[1]}/hqdefault.jpg`;
-
-  const mediaUrl =
-    item.mediaContent?.[0]?.$?.url ||
-    item.mediaThumbnail?.[0]?.$?.url ||
-    item.enclosure?.url ||
-    "";
-  if (upgradeImageUrl(mediaUrl)) return upgradeImageUrl(mediaUrl);
-
-  const html = `${item.contentEncoded || ""} ${item.content || ""} ${item.summary || ""}`;
-  const imgMatch = html.match(/<img[^>]+src=["']([^"'>]+)["']/i);
-  if (imgMatch && upgradeImageUrl(imgMatch[1])) return upgradeImageUrl(imgMatch[1]);
-
-  return "";
-}
-
-async function scrapeArticleAndImage(url, fallbackText, existingImg) {
-  const cleanFallback = cheerio.load(fallbackText || "").text().replace(/\s+/g, " ").trim();
+async function fetchArticleContext(url, rawSnippet) {
+  const cleanSnippet = cheerio.load(rawSnippet || "").text().replace(/\s+/g, " ").trim();
   if (!url || url.includes("news.google.com") || url.includes("youtube.com")) {
-    return { text: cleanFallback, image: existingImg };
+    return cleanSnippet;
   }
-
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5500);
+    const timer = setTimeout(() => controller.abort(), 4500);
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36" }
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; Pulse50EditorialBot/1.0)" }
     });
     clearTimeout(timer);
     const html = await res.text();
     const $ = cheerio.load(html);
-
-    let pageImg = existingImg;
-    if (!pageImg) {
-      const ogImg =
-        $('meta[property="og:image"]').attr("content") ||
-        $('meta[name="twitter:image"]').attr("content") ||
-        $('meta[property="og:image:secure_url"]').attr("content") ||
-        "";
-      pageImg = upgradeImageUrl(ogImg);
-    }
-
     $("script, style, nav, footer, header, aside, form").remove();
-    const paras = $("article p, .article-body p, .story-content p, p")
+    const paras = $("p")
       .map((_, el) => $(el).text().trim())
       .get()
-      .filter((p) => p.length > 55 && !/subscribe|cookie|sign in|all rights reserved|also read|advertisement/i.test(p))
-      .slice(0, 6)
+      .filter((p) => p.length > 50 && !/subscribe|cookie|sign in|all rights reserved|advertisement/i.test(p))
+      .slice(0, 5)
       .join(" ");
-
-    return {
-      text: paras.length > 140 ? paras.slice(0, 2400) : cleanFallback,
-      image: pageImg
-    };
+    return paras.length > 120 ? paras.slice(0, 2000) : cleanSnippet;
   } catch {
-    return { text: cleanFallback, image: existingImg };
+    return cleanSnippet;
   }
 }
 
-async function writeEditorial50WordGist(title, articleText, isPodcast) {
+function buildCleanFallback(title, rawContext, source) {
+  let text = cheerio.load(rawContext || "").text().replace(/\s+/g, " ").trim();
+  if (text.toLowerCase().startsWith(title.toLowerCase().slice(0, 25))) {
+    text = text.slice(title.length).replace(/^[:\-–—.,|\s]+/, "").trim();
+  }
+  text = text.replace(/\b(Live Law|The Hindu|NDTV|Times of India|Indian Express|PTI|ANI)\b[:\s-]*/gi, "").trim();
+
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length >= 18) {
+    return words.slice(0, 48).join(" ").replace(/[,;:\-–—]+$/, "") + ".";
+  }
+  return `Key developments and official updates regarding ${title.toLowerCase()} were reported by ${source}. Full background details and ongoing coverage are available via the source link below.`;
+}
+
+async function rewriteTo50Words(title, rawContext, source, isPodcast) {
   const prompt = isPodcast
-    ? `You are a senior editor for Pulse50. Write a compelling, grammatically complete 45 to 50-word gist of this podcast episode explaining what the host and guest discuss and the main insight.
-Rules:
-- MUST be between 45 and 50 words.
-- MUST end with a complete sentence and proper punctuation.
-- Do NOT repeat the title word-for-word.
-- Do NOT include hashtags, emojis, or "click link below".
-Output ONLY the 45-50 word paragraph.
+    ? `Write an engaging, original 45 to 50-word podcast episode summary explaining the key topic, speaker insights, and main takeaway. Do NOT repeat the title. Output ONLY the 45-50 word paragraph.\nEpisode Title: ${title}\nNotes: ${rawContext}`
+    : `Rewrite this news report into an original, factual 45 to 50-word summary in crisp English with complete sentences. Do NOT repeat the headline or mention publisher names. Output ONLY the 45-50 word paragraph.\nHeadline: ${title}\nArticle Facts: ${rawContext}`;
 
-Episode Title: ${title}
-Episode Notes: ${articleText}`
-    : `You are a senior news editor for Pulse50 (like Inshorts). Write an informative, crystal-clear, grammatically complete 45 to 50-word news gist summarizing the key facts (who, what, where, why, and key outcomes).
-Example style:
-Headline: Modi on a visit to USA will be meeting President Donald Trump
-Gist: Prime Minister Narendra Modi will hold one-on-one talks with President Donald Trump during his three-day visit to the United States. The leaders will discuss bilateral economic and financial growth, new defense equipment acquisitions, and deeper cultural cooperation between both nations.
-
-Rules:
-- MUST be strictly between 45 and 50 words.
-- MUST be complete, well-formed sentences ending with a period.
-- Do NOT repeat the headline at the start.
-- Do NOT mention the newspaper/publisher name inside the gist.
-- Do NOT use filler phrases like "full details available in the article".
-Output ONLY the 45-50 word paragraph.
-
-Headline: ${title}
-Article Facts: ${articleText}`;
-
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      const res = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt
-      });
-      const out = (res.text || "").replace(/\s+/g, " ").trim();
-      const words = out.split(/\s+/).filter(Boolean);
-      if (words.length >= 38 && words.length <= 55 && /[.!?]$/.test(out)) {
-        return out;
-      }
-    } catch (err) {
-      console.warn(`Gemini retry ${attempt} for "${title.slice(0, 35)}":`, err.message);
-      await sleep(2500);
-    }
+  try {
+    const res = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt
+    });
+    const out = (res.text || "").replace(/\s+/g, " ").trim();
+    const wc = out.split(/\s+/).filter(Boolean).length;
+    if (wc >= 28 && wc <= 60) return out;
+  } catch (err) {
+    console.warn("Gemini fallback used:", title.slice(0, 35), err.message);
   }
 
-  let clean = cheerio.load(articleText || "").text().replace(/\s+/g, " ").trim();
-  if (clean.toLowerCase().startsWith(title.toLowerCase().slice(0, 24))) {
-    clean = clean.slice(title.length).replace(/^[:\-–—.,|\s]+/, "").trim();
-  }
-  const sentences = clean.split(/(?<=[.!?])\s+/).filter((s) => s.length > 20);
-  let selected = [];
-  let count = 0;
-  for (const s of sentences) {
-    const wc = s.split(/\s+/).length;
-    if (count + wc <= 50) {
-      selected.push(s);
-      count += wc;
-      if (count >= 40) break;
-    }
-  }
-  return selected.length ? selected.join(" ") : "";
-}
-
-function detectStates(text, forcedState) {
-  const found = new Set(forcedState ? [forcedState] : []);
-  const lower = text.toLowerCase();
-  for (const st of INDIAN_STATES) {
-    if (lower.includes(st.toLowerCase())) found.add(st);
-  }
-  return Array.from(found);
+  return buildCleanFallback(title, rawContext, source);
 }
 
 async function run() {
@@ -240,15 +168,11 @@ async function run() {
   const seen = new Set();
 
   for (const feed of FEEDS) {
-    if (results.length >= 100) break; // Cap each batch at 100 fresh stories
-
     try {
       const parsed = await parser.parseURL(feed.url);
-      const items = (parsed.items || []).slice(0, feed.limit || 8);
+      const items = (parsed.items || []).slice(0, feed.limit || 5);
 
       for (const item of items) {
-        if (results.length >= 100) break;
-
         const cleanTitle = (item.title || "")
           .replace(/\s+[-|–—]\s+[^-|–—]+$/, "")
           .replace(/#\w+/g, "")
@@ -256,45 +180,59 @@ async function run() {
         if (!cleanTitle || seen.has(cleanTitle.toLowerCase())) continue;
         seen.add(cleanTitle.toLowerCase());
 
-        const isPodcast = feed.category === "Podcasts";
-        const rssImg = extractFeedImage(item);
-        const rawSnippet = item.mediaGroup?.["media:description"]?.[0] || item.contentSnippet || item.content || item.summary || "";
+        const isPodcast = feed.category === "Podcasts" || /\b(podcast|figuring out|wtf is|lex fridman|huberman)\b/i.test(cleanTitle);
+        const isStateFeed = feed.category === "India States";
 
-        const { text: richText, image: finalImage } = isPodcast
-          ? { text: rawSnippet, image: rssImg }
-          : await scrapeArticleAndImage(item.link, rawSnippet, rssImg);
+        const rawSnippet =
+          item["media:group"]?.["media:description"]?.[0] ||
+          item.contentSnippet ||
+          item.content ||
+          item.summary ||
+          "";
 
-        const summary = await writeEditorial50WordGist(cleanTitle, richText, isPodcast);
-        if (!summary || summary.split(/\s+/).length < 22) continue;
+        const context = isPodcast ? rawSnippet : await fetchArticleContext(item.link, rawSnippet);
+        const summary = await rewriteTo50Words(cleanTitle, context, feed.source, isPodcast);
 
-        const stateTags = detectStates(`${cleanTitle} ${summary}`, feed.state);
-        const tags = Array.from(new Set(["General", feed.category, ...(stateTags.length ? ["India States"] : [])]));
+        // Only assign domestic stateTags for dedicated State feeds (keeps States distinct from General)
+        const stateTags = isStateFeed ? detectDomesticStatesFromHeadline(cleanTitle, feed.state) : [];
+        const tags = new Set([feed.category]);
+
+        if (isPodcast) tags.add("Podcasts");
+        if (isStateFeed && stateTags.length > 0) {
+          tags.add("India States");
+        } else if (!isStateFeed) {
+          // Keep General focused on top national/world/general stories rather than flooding with every district story
+          tags.add("General");
+        }
 
         const ytMatch = (item.link || "").match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
         const video = ytMatch ? `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1` : "";
+        const image = ytMatch
+          ? `https://i.ytimg.com/vi/${ytMatch[1]}/hqdefault.jpg`
+          : (item["media:content"]?.["$"]?.url || item["media:thumbnail"]?.["$"]?.url || item.enclosure?.url || "");
 
         results.push({
           id: Buffer.from(cleanTitle).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 22),
-          primaryCategory: feed.category,
-          tags,
+          primaryCategory: isPodcast ? "Podcasts" : feed.category,
+          tags: Array.from(tags),
           stateTags,
           title: cleanTitle,
           summary,
           source: feed.source,
-          image: finalImage,
+          image,
           video,
           link: item.link || "https://news.google.com",
           pubDate: item.pubDate || new Date().toISOString()
         });
 
-        await sleep(1600);
+        await sleep(1400);
       }
     } catch (e) {
       console.warn(`Feed skipped (${feed.source}):`, e.message);
     }
   }
 
-  console.log(`Total 50-word stories with images prepared: ${results.length}`);
+  console.log(`Total stories prepared: ${results.length}`);
   if (results.length >= 25) {
     fs.writeFileSync("news.json", JSON.stringify(results, null, 2));
     console.log("Successfully wrote news.json");
