@@ -1,7 +1,7 @@
-const fs = require("fs");
-const Parser = require("rss-parser");
-const cheerio = require("cheerio");
-const { GoogleGenAI } = require("@google/genai");
+import fs from "fs";
+import Parser from "rss-parser";
+import * as cheerio from "cheerio";
+import { GoogleGenAI } from "@google/genai";
 
 const parser = new Parser({ timeout: 15000 });
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -51,9 +51,10 @@ async function rewriteTo50Words(title, rawDesc, isPodcast) {
     console.warn("Gemini fallback used for:", title.slice(0, 40), err.message);
   }
 
-  // Clean fallback if Gemini rate-limits on an item
   const clean = cheerio.load(rawDesc || "").text().replace(/\s+/g, " ").trim();
-  return clean.length >= 40 ? clean.split(/\s+/).slice(0, 50).join(" ") : `${title}. Verified updates from the newsroom highlight key developments, official statements, and broader public impact surrounding this developing report.`;
+  return clean.length >= 40
+    ? clean.split(/\s+/).slice(0, 50).join(" ")
+    : `${title}. Verified updates from the newsroom highlight key developments, official statements, and broader public impact surrounding this developing report.`;
 }
 
 async function run() {
@@ -94,7 +95,7 @@ async function run() {
           pubDate: item.pubDate || new Date().toISOString()
         });
 
-        await sleep(1800); // Respect free-tier RPM limits
+        await sleep(1800);
       }
     } catch (e) {
       console.warn(`Feed skipped (${feed.source}):`, e.message);
