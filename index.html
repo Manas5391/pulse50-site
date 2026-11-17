@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#090d16" />
+  <title>Pulse50 — India & World News in 50 Words</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" type="image/png" href="/icon-192.png" />
+  <!-- Google AdSense Verification Tag -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8456169895588415" crossorigin="anonymous"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0; height: 100%; overflow: hidden;
+      background: #090d16; color: #f8fafc;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    /* 56px header + 48px tabs + 48px footer = 152px */
+    .snap-feed {
+      height: calc(100dvh - 152px);
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+    }
+    .snap-feed::-webkit-scrollbar { display: none; }
+    .news-card {
+      height: calc(100dvh - 152px);
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+    }
+    .cat-bar { scrollbar-width: none; }
+    .cat-bar::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+<body class="flex flex-col select-none">
+
+  <!-- Top App Header -->
+  <header class="h-14 px-3.5 flex items-center justify-between bg-slate-950 border-b border-slate-800/90 shrink-0 z-30">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-black text-white text-xs shadow-md shadow-indigo-950">P50</div>
+      <div>
+        <div class="flex items-center gap-1.5">
+          <h1 id="appTitle" class="text-sm font-bold leading-tight text-white">Pulse50 News</h1>
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Live Feed Active"></span>
+        </div>
+        <p id="syncStatus" class="text-[10px] text-slate-400">50-Word Desk • Live Updates</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-1.5">
+      <button onclick="toggleSearchBar()" aria-label="Search News" class="w-8 h-8 rounded-lg bg-slate-800/90 hover:bg-slate-700 flex items-center justify-center text-xs border border-slate-700/70">🔍</button>
+      <button onclick="openNotificationsModal()" aria-label="Trending Alerts" class="relative w-8 h-8 rounded-lg bg-slate-800/90 hover:bg-slate-700 flex items-center justify-center text-xs border border-slate-700/70">
+        <span>🔔</span>
+        <span id="alertDot" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500"></span>
+      </button>
+      <button onclick="fetchLiveNews('manual')" class="px-2.5 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 text-xs font-semibold border border-emerald-700/50 flex items-center gap-1">
+        <span id="refreshIcon">↻</span> Live
+      </button>
+      <button onclick="openStudio()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700">Studio</button>
+    </div>
+  </header>
+
+  <!-- Locked Category Tabs (Changes ONLY on tap — never on scroll) -->
+  <nav id="categoryBar" class="h-12 px-3 flex items-center gap-2 overflow-x-auto cat-bar bg-slate-900/95 border-b border-slate-800 shrink-0 z-20"></nav>
+
+  <!-- Expandable Keyword Search Bar -->
+  <div id="searchBarContainer" class="hidden px-3 py-2 bg-slate-900 border-b border-slate-800 flex items-center gap-2 shrink-0 z-20">
+    <input id="searchInput" type="search" oninput="handleSearchInput(this.value)" placeholder="Search headlines, topics, states, or keywords..." class="flex-1 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500" />
+    <button onclick="clearSearch()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold">Clear</button>
+  </div>
+
+  <!-- Repositioned Floating New Feeds Pill (Top edge below tabs — never blocks faces) -->
+  <button id="newStoriesPill" onclick="applyPendingStories()" class="hidden fixed top-[110px] left-1/2 -translate-x-1/2 z-40 px-4 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xl shadow-indigo-950/90 border border-indigo-400/50 flex items-center gap-1.5 transition-all">
+    <span>↑</span><span>New Feeds Available</span>
+  </button>
+
+  <!-- Main Vertical Snap Feed -->
+  <main id="feedContainer" class="snap-feed relative"></main>
+
+  <!-- Clean AdSense-Safe Navigation & Policy Footer (No Fake Ad Placeholders) -->
+  <footer id="adFooter" class="h-12 px-3.5 bg-slate-950 border-t border-slate-800/90 flex items-center justify-between text-[11px] text-slate-400 shrink-0 z-20">
+    <span class="font-semibold text-slate-300">© 2026 Pulse50 News</span>
+    <div class="flex items-center gap-3">
+      <a href="/about.html" class="hover:text-indigo-400 transition">About</a>
+      <a href="/contact.html" class="hover:text-indigo-400 transition">Contact</a>
+      <a href="/privacy-policy.html" class="hover:text-indigo-400 transition">Privacy</a>
+      <a href="/terms.html" class="hover:text-indigo-400 transition">Terms</a>
+    </div>
+  </footer>
+
+  <!-- Trending Alerts Drawer -->
+  <div id="notificationsModal" class="fixed inset-0 bg-black/85 z-50 hidden items-end sm:items-center justify-center p-3">
+    <div class="max-w-md w-full bg-slate-900 rounded-2xl border border-slate-700 overflow-hidden max-h-[82dvh] flex flex-col">
+      <div class="p-3.5 border-b border-slate-800 flex items-center justify-between">
+        <div>
+          <h2 class="font-bold text-sm text-white">Trending World & India Alerts</h2>
+          <p class="text-[11px] text-slate-400">Tap any alert to jump directly to the story</p>
+        </div>
+        <button onclick="closeNotificationsModal()" class="px-2.5 py-1 rounded-lg bg-slate-800 text-xs font-bold">✕</button>
+      </div>
+      <div id="alertsList" class="p-3 space-y-2 overflow-y-auto flex-1"></div>
+    </div>
+  </div>
+
+  <!-- Video Player Modal -->
+  <div id="videoModal" class="fixed inset-0 bg-black/95 z-50 hidden flex-col justify-center p-4">
+    <div class="max-w-xl w-full mx-auto bg-slate-900 rounded-2xl overflow-hidden border border-slate-700">
+      <div class="p-3 flex items-center justify-between border-b border-slate-800">
+        <span id="modalSource" class="text-xs font-bold text-indigo-400 uppercase">Video Coverage</span>
+        <button onclick="closeVideo()" class="px-3 py-1 rounded bg-slate-800 text-xs font-bold">Close ✕</button>
+      </div>
+      <div class="aspect-video bg-black">
+        <iframe id="videoFrame" class="w-full h-full" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      </div>
+      <div class="p-3.5">
+        <h3 id="modalTitle" class="font-bold text-sm text-white"></h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Owner Studio Modal -->
+  <div id="studioModal" class="fixed inset-0 bg-black/85 z-50 hidden items-center justify-center p-4">
+    <div class="max-w-md w-full bg-slate-900 rounded-2xl p-5 border border-slate-700 space-y-3 max-h-[90dvh] overflow-y-auto">
+      <div class="flex justify-between items-center">
+        <h2 class="font-bold text-base">Owner Studio & Editorial Desk</h2>
+        <button onclick="closeStudio()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400">Focus Indian State (All 28 States)</label>
+        <select id="inputDefaultState" class="w-full mt-1 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm"></select>
+      </div>
+      <button onclick="saveBranding()" class="w-full py-2 rounded-lg bg-indigo-600 font-semibold text-sm">Save State Preference</button>
+      <hr class="border-slate-800" />
+      <h3 class="font-semibold text-sm">Pin Custom Story (Strict ≤ 50 Words)</h3>
+      <input id="newsHeadline" placeholder="Headline" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm" />
+      <select id="newsCategory" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm">
+        <option>General</option>
+        <option>India National</option>
+        <option>World</option>
+        <option>India States</option>
+        <option>Politics</option>
+        <option>Sports</option>
+        <option>Entertainment</option>
+        <option>Podcasts</option>
+      </select>
+      <textarea id="newsBody" rows="3" oninput="updateWordCount()" placeholder="Write factual summary (≤ 50 words)..." class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm"></textarea>
+      <div class="flex justify-between text-xs">
+        <span id="wordCounter" class="text-emerald-400 font-semibold">0 / 50 words</span>
+        <span class="text-slate-400">Complete sentences</span>
+      </div>
+      <input id="newsSource" placeholder="Source Name (e.g., The Hindu, Reuters)" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm" />
+      <input id="newsImage" placeholder="HD Image URL (optional)" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm" />
+      <input id="newsLink" placeholder="Full Article URL (https://...)" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm" />
+      <input id="newsVideo" placeholder="YouTube URL (optional)" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm" />
+      <button onclick="publishNews()" class="w-full py-2.5 rounded-lg bg-emerald-600 font-bold text-sm">Pin Story to Top</button>
+    </div>
+  </div>
+
+  <script>
+    const MAX_FEED_WINDOW = 600;
+    const CATEGORIES = [
+      "General",
+      "India National",
+      "World",
+      "India States",
+      "Politics",
+      "Sports",
+      "Entertainment",
+      "Podcasts"
+    ];
+
+    const INDIAN_STATES_28 = [
+      "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+      "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
+      "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+      "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+      "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+      "Uttar Pradesh", "Uttarakhand", "West Bengal"
+    ];
+
+    const LIVE_FEEDS = [
+      { category: "General", source: "Google News India", url: "https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en" },
+      { category: "General", source: "Times of India", url: "https://timesofindia.indiatimes.com/rssfeedstopstories.cms" },
+      { category: "India National", source: "The Hindu", url: "https://www.thehindu.com/news/national/feeder/default.rss" },
+      { category: "India National", source: "NDTV News", url: "https://feeds.feedburner.com/ndtvnews-india-news" },
+      { category: "India National", source: "Indian Express", url: "https://indianexpress.com/section/india/feed/" },
+      { category: "World", source: "BBC World", url: "https://feeds.bbci.co.uk/news/world/rss.xml" },
+      { category: "World", source: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml" },
+      { category: "Politics", source: "The Hindu Politics", url: "https://news.google.com/rss/search?q=Indian+politics+parliament+government+when:1d&hl=en-IN&gl=IN&ceid=IN:en" },
+      { category: "Sports", source: "BBC Sport", url: "https://feeds.bbci.co.uk/sport/rss.xml" },
+      { category: "Sports", source: "Indian Express Sports", url: "https://indianexpress.com/section/sports/feed/" },
+      { category: "Entertainment", source: "Indian Express Entertainment", url: "https://indianexpress.com/section/entertainment/feed/" },
+      { category: "Entertainment", source: "TOI Entertainment", url: "https://timesofindia.indiatimes.com/rssfeeds/1081479906.cms" },
+      { category: "Podcasts", source: "Raj Shamani Podcast", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCzwCEE_PchiBULMnAJqhGVg" },
+      { category: "Podcasts", source: "Nikhil Kamath", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCnC8SAZzQiB2XlFBwpMq17g" },
+      { category: "Podcasts", source: "ANI Podcast", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCtFQDgA8J8_iiwc5-KoAQlg" },
+      { category: "Podcasts", source: "Lex Fridman", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCSHZKyawb77ixDdsGog4iWA" },
+      { category: "Podcasts", source: "Huberman Lab", url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC2D2CMWXMOVWx7giW1n3LIg" }
+    ];
+
+    const SEED_STORIES = [
+      {
+        id: "seed-india-1",
+        primaryCategory: "India National",
+        tags: ["General", "India National"],
+        title: "India Expands Digital Public Infrastructure to Rural Cooperatives",
+        summary: "The Union Ministry launched unified digital payment and crop advisory systems across forty thousand rural agricultural societies. Officials confirmed the platform streamlines direct subsidy transfers, live market pricing, and local weather alerts for smallholder farmers nationwide.",
+        source: "The Hindu",
+        image: "",
+        video: "",
+        hasVideo: false,
+        link: "https://www.thehindu.com/news/national/",
+        pubDate: Date.now(),
+        arrivalOrder: Date.now()
+      },
+      {
+        id: "seed-world-1",
+        primaryCategory: "World",
+        tags: ["General", "World"],
+        title: "Global Clean Grid Accord Accelerates Cross-Border Solar Storage",
+        summary: "Energy ministers from sixty nations signed a binding framework to triple renewable grid storage capacity by 2030. The accord establishes a shared green technology fund to accelerate solar and wind transitions across developing economies.",
+        source: "BBC World",
+        image: "",
+        video: "",
+        hasVideo: false,
+        link: "https://www.bbc.com/news/world",
+        pubDate: Date.now() - 60000,
+        arrivalOrder: Date.now() - 60000
+      }
+    ];
+
+    let activeCategory = "General";
+    let selectedState = localStorage.getItem("pulse50_state") || "Telangana";
+    let searchQuery = "";
+    let pinnedAlertStoryId = null;
+
+    function safeLoadJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    let customPinnedNews = safeLoadJSON("pulse50_pinned_v6", []);
+    let liveNewsItems = safeLoadJSON("pulse50_live_v6", null) || SEED_STORIES;
+    let readStoryIds = new Set(safeLoadJSON("pulse50_read_v6", []));
+    let pendingFreshItems = null;
+    let currentTrendingAlerts = [];
+
+    function countWords(str) {
+      return String(str || "").trim().split(/\s+/).filter(Boolean).length;
+    }
+
+    // 1. HIGH-CLARITY IMAGE UPGRADER & BLUR-REJECTION GATE
+    function upgradeToHighResImage(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== "string" || !rawUrl.startsWith("http")) return "";
+      const lower = rawUrl.toLowerCase();
+      if (
+        lower.includes("googleusercontent.com") ||
+        lower.includes("gstatic.com") ||
+        lower.includes("news.google.com") ||
+        lower.includes("pixel") ||
+        lower.includes("logo") ||
+        lower.includes("icon") ||
+        lower.includes("1x1")
+      ) {
+        return "";
+      }
+
+      return rawUrl
+        .replace(/([?&])(w|width|h|height|quality|q)=\d+/gi, "")
+        .replace(/resize=\d+[,x]\d+/gi, "resize=1200,675")
+        .replace(/-\d{2,3}x\d{2,3}(\.(?:jpg|jpeg|png|webp))/gi, "$1")
+        .replace(/(_thumb|_small|_medium|\/thumb\/)/gi, "")
+        .replace(/[?&]+$/, "");
+    }
+
+    function extractAuthenticImage(item) {
+      const link = item.link || "";
+      const ytMatch = link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      if (ytMatch && ytMatch[1]) {
+        return `https://i.ytimg.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+      }
+
+      const rawHtml = `${item.description || ""} ${item.content || ""}`;
+      const imgMatches = [...rawHtml.matchAll(/<img[^>]+src=["']([^"'>]+)["']/gi)].map(m => m[1]);
+
+      const candidates = [
+        item.mediaContent?.$?.url,
+        item.mediaThumbnail?.$?.url,
+        item.thumbnail,
+        item.enclosure?.link,
+        item.enclosure?.url,
+        ...imgMatches
+      ];
+
+      for (const candidate of candidates) {
+        const hdUrl = upgradeToHighResImage(candidate);
+        if (hdUrl) return hdUrl;
+      }
+      return "";
+    }
+
+    function buildVibrantSourceBanner(sourceName, topicLabel, seedIdx = 0) {
+      const gradients = [
+        "from-indigo-600 via-purple-600 to-pink-500",
+        "from-emerald-500 via-teal-600 to-cyan-600",
+        "from-amber-500 via-orange-600 to-rose-600",
+        "from-sky-500 via-blue-600 to-indigo-700",
+        "from-fuchsia-600 via-purple-600 to-indigo-600",
+        "from-rose-500 via-pink-600 to-amber-500"
+      ];
+      const grad = gradients[Math.abs(seedIdx + (sourceName || "").length) % gradients.length];
+      const cleanSource = (sourceName || "Pulse50 News").trim();
+      const initials = cleanSource
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(w => w[0].toUpperCase())
+        .join("") || "P50";
+
+      return `
+        <div class="w-full h-full bg-gradient-to-br ${grad} flex flex-col items-center justify-center p-4 text-center relative overflow-hidden">
+          <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/15 blur-xl"></div>
+          <div class="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-black/15 blur-xl"></div>
+          <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md border border-white/40 shadow-lg flex items-center justify-center text-white font-black text-sm tracking-wider mb-1.5">
+            ${initials}
+          </div>
+          <span class="text-white font-extrabold text-sm tracking-wide drop-shadow">${cleanSource}</span>
+          <span class="mt-1 px-2.5 py-0.5 rounded-full bg-black/25 text-white/95 text-[10px] font-semibold uppercase tracking-widest">
+            ${topicLabel || "Verified Report"}
+          </span>
+        </div>
+      `;
+    }
+
+    // 2. MULTI-SOURCE CLUSTERING & ANTI-BOILERPLATE MEDIATOR EDITOR
+    const STOP_WORDS = new Set([
+      "the", "and", "for", "from", "with", "that", "this", "into", "over", "after",
+      "amid", "says", "said", "will", "are", "was", "were", "has", "have", "had",
+      "new", "news", "india", "to", "in", "on", "of", "at", "by", "as", "an", "a",
+      "is", "be", "watch", "video", "live", "updates", "latest", "report", "reports"
+    ]);
+
+    function extractKeywords(text) {
+      return new Set(
+        String(text || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, " ")
+          .split(/\s+/)
+          .filter(w => w.length > 2 && !STOP_WORDS.has(w))
+      );
+    }
+
+    function computeHeadlineSimilarity(titleA, titleB) {
+      const setA = extractKeywords(titleA);
+      const setB = extractKeywords(titleB);
+      if (!setA.size || !setB.size) return 0;
+      let overlap = 0;
+      setA.forEach(w => { if (setB.has(w)) overlap++; });
+      return overlap / Math.min(setA.size, setB.size);
+    }
+
+    function cleanRawSnippet(rawHtml, cleanTitle, sourceName) {
+      const tmp = document.createElement("div");
+      tmp.innerHTML = rawHtml || "";
+      let text = (tmp.textContent || tmp.innerText || "")
+        .replace(/https?:\/\/\S+/g, "")
+        .replace(/Read more.*$/i, "")
+        .replace(/Continue reading.*$/i, "")
+        .replace(/Also read.*$/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      if (sourceName) {
+        const srcEscaped = sourceName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        text = text.replace(new RegExp(`^${srcEscaped}\\s*[:.\\-–—|]+\\s*`, "i"), "");
+      }
+      if (text.toLowerCase().startsWith(cleanTitle.toLowerCase().slice(0, 26))) {
+        text = text.slice(cleanTitle.length).replace(/^[:\-–—.,|\s]+/, "").trim();
+      }
+      return text;
+    }
+
+    function mediatorEditTo50Words(cleanBody, cleanTitle, sourceName) {
+      const headlineWords = extractKeywords(cleanTitle);
+
+      const simplifications = [
+        [/\bsubsequently\b/gi, "later"],
+        [/\bcommenced\b/gi, "started"],
+        [/\bapproximately\b/gi, "about"],
+        [/\butilize\b/gi, "use"],
+        [/\bdemonstrate\b/gi, "show"],
+        [/\bnevertheless\b/gi, "still"],
+        [/\bconsequently\b/gi, "as a result"],
+        [/\bprior to\b/gi, "before"],
+        [/\bin order to\b/gi, "to"],
+        [/\baccording to [^,]+,\s*/gi, ""]
+      ];
+
+      let processed = cleanBody;
+      simplifications.forEach(([pattern, rep]) => {
+        processed = processed.replace(pattern, rep);
+      });
+
+      const sentences = processed
+        .split(/(?<=[.!?])\s+/)
+        .map(s => s.trim())
+        .filter(s => {
+          if (s.length < 18) return false;
+          if (sourceName && s.toLowerCase().includes(sourceName.toLowerCase())) return false;
+          const sentWords = extractKeywords(s);
+          if (!sentWords.size) return false;
+          let overlap = 0;
+          sentWords.forEach(w => { if (headlineWords.has(w)) overlap++; });
+          return (overlap / Math.min(sentWords.size, headlineWords.size || 1)) < 0.55;
+        });
+
+      let selected = [];
+      let wordCount = 0;
+
+      for (const sent of sentences) {
+        let cleanSent = sent.replace(/[,;:\-–—]+$/, "").trim();
+        if (!/[.!?]$/.test(cleanSent)) cleanSent += ".";
+        const wc = cleanSent.split(/\s+/).filter(Boolean).length;
+
+        if (wordCount + wc <= 50) {
+          selected.push(cleanSent);
+          wordCount += wc;
+          if (wordCount >= 40) break;
+        } else if (selected.length === 0) {
+          const trimmed = cleanSent.split(/\s+/).slice(0, 48).join(" ").replace(/[,;:\-–—]+$/, "") + ".";
+          selected.push(trimmed);
+          break;
+        }
+      }
+
+      if (selected.length === 0) {
+        return "Full details, official statements, and complete coverage on this developing report are available in the source article below.";
+      }
+
+      return selected.join(" ");
+    }
+
+    function classifyTags(title, body, primaryCat, stateName = null) {
+      const tags = new Set(["General", primaryCat]);
+      if (stateName) tags.add("India States");
+
+      const text = `${title} ${body}`.toLowerCase();
+      const isCriminalCourt = /\b(criminal court|hague|arrest warrant|genocide|tribunal|prosecutor|war crimes)\b/i.test(text);
+      const isCricketSports = /\b(cricket|bcci|ipl|world cup|test match|odi|t20|wicket|innings|football|olympics|badminton|tennis)\b/i.test(text);
+
+      if (isCricketSports && !isCriminalCourt) tags.add("Sports");
+      if (/\b(parliament|lok sabha|rajya sabha|election|minister|bjp|congress|chief minister|supreme court)\b/i.test(text)) tags.add("Politics");
+      if (/\b(india|new delhi|union government|rbi|isro|rupee)\b/i.test(text)) tags.add("India National");
+      if (/\b(bollywood|tollywood|actor|actress|film|movie|cinema|box office|trailer)\b/i.test(text)) tags.add("Entertainment");
+
+      return Array.from(tags);
+    }
+
+    function extractVideoEmbed(item) {
+      const combined = `${item.link || ""} ${item.description || ""}`;
+      const yt = combined.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+      if (yt && yt[1]) return `https://www.youtube.com/embed/${yt[1]}?autoplay=1`;
+      return "";
+    }
+
+    function scoreStoryCandidate(candidate) {
+      let score = 0;
+      if (candidate.image) score += 40;
+      if (candidate.cleanBody.length >= 140) score += 35;
+      else if (candidate.cleanBody.length >= 60) score += 20;
+      if (!candidate.link.includes("news.google.com")) score += 15;
+      if (candidate.hasVideo) score += 10;
+      return score;
+    }
+
+    function clusterAndBuildStories(rawItems) {
+      const clusters = [];
+
+      for (const raw of rawItems) {
+        const cleanTitle = (raw.title || "").replace(/\s+[-|–—]\s+[^-|–—]+$/, "").trim();
+        if (!cleanTitle) continue;
+        const sourceName = (raw.title?.match(/\s+[-|–—]\s+([^-|–—]+)$/) || [])[1]?.trim() || raw.source || "News Desk";
+        const cleanBody = cleanRawSnippet(raw.description || raw.content, cleanTitle, sourceName);
+        const image = extractAuthenticImage(raw);
+        const video = extractVideoEmbed(raw);
+        const hasVideo = Boolean(video || /watch video|\bvideo\b/i.test(raw.title || ""));
+
+        const candidate = {
+          id: btoa(unescape(encodeURIComponent(cleanTitle))).replace(/[^a-zA-Z0-9]/g, "").slice(0, 22),
+          primaryCategory: raw.category || "General",
+          state: raw.state || null,
+          title: cleanTitle,
+          source: sourceName,
+          cleanBody,
+          image,
+          video,
+          hasVideo,
+          link: raw.link || "https://news.google.com",
+          pubDate: raw.pubDate ? new Date(raw.pubDate).getTime() : Date.now(),
+          arrivalOrder: Date.now()
+        };
+        candidate.qualityScore = scoreStoryCandidate(candidate);
+
+        const existingCluster = clusters.find(c => computeHeadlineSimilarity(c.best.title, cleanTitle) >= 0.52);
+        if (existingCluster) {
+          if (!existingCluster.best.image && candidate.image) {
+            existingCluster.best.image = candidate.image;
+          }
+          if (candidate.qualityScore > existingCluster.best.qualityScore) {
+            const bestImg = candidate.image || existingCluster.best.image;
+            existingCluster.best = { ...candidate, image: bestImg };
+          }
+        } else {
+          clusters.push({ best: candidate });
+        }
+      }
+
+      return clusters.map(({ best }) => {
+        const summary = mediatorEditTo50Words(best.cleanBody, best.title, best.source);
+        return {
+          ...best,
+          summary,
+          tags: classifyTags(best.title, summary, best.primaryCategory, best.state)
+        };
+      });
+    }
+
+    // 3. RELIABLE MULTI-PROXY LIVE FETCH & PRIORITY QUEUE
+    async function fetchFeedReliable(feedUrl) {
+      const cb = Math.floor(Date.now() / 60000);
+      try {
+        const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&_cb=${cb}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.status === "ok" && Array.isArray(data.items) && data.items.length) return data.items;
+        }
+      } catch (e) {}
+
+      try {
+        const proxy = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(feedUrl)}`);
+        if (proxy.ok) {
+          const pData = await proxy.json();
+          const xml = new DOMParser().parseFromString(pData.contents, "text/xml");
+          return Array.from(xml.querySelectorAll("item, entry")).slice(0, 8).map(node => ({
+            title: node.querySelector("title")?.textContent || "",
+            link: node.querySelector("link")?.textContent || node.querySelector("link")?.getAttribute("href") || "",
+            description: node.querySelector("description, summary")?.textContent || "",
+            pubDate: node.querySelector("pubDate, updated")?.textContent || new Date().toISOString(),
+            thumbnail: node.getElementsByTagName("media:content")[0]?.getAttribute("url") || node.getElementsByTagName("media:thumbnail")[0]?.getAttribute("url") || ""
+          }));
+        }
+      } catch (e) {}
+      return [];
+    }
+
+    async function fetchStateNews(stateName) {
+      const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(stateName + " India news when:2d")}&hl=en-IN&gl=IN&ceid=IN:en`;
+      const items = await fetchFeedReliable(rssUrl);
+      return items.slice(0, 10).map(item => ({ ...item, category: "India States", state: stateName, source: `${stateName} Desk` }));
+    }
+
+    async function fetchLiveNews(mode = "initial") {
+      const icon = document.getElementById("refreshIcon");
+      const statusEl = document.getElementById("syncStatus");
+      if (icon && mode !== "silent") icon.classList.add("animate-spin");
+      if (mode === "manual" && statusEl) statusEl.textContent = "Syncing latest feeds...";
+
+      try {
+        const feedPromises = LIVE_FEEDS.map(async (f) => {
+          const items = await fetchFeedReliable(f.url);
+          return items.slice(0, 7).map(item => ({ ...item, category: f.category, source: f.source }));
+        });
+        const [stateRaw, ...feedResults] = await Promise.all([
+          fetchStateNews(selectedState),
+          ...feedPromises
+        ]);
+
+        const rawCombined = [...stateRaw, ...feedResults.flat()];
+        const curatedStories = clusterAndBuildStories(rawCombined);
+
+        if (curatedStories.length > 0) {
+          const existingIds = new Set(liveNewsItems.map(i => i.id));
+          const brandNew = curatedStories.filter(s => !existingIds.has(s.id));
+          const feedEl = document.getElementById("feedContainer");
+
+          if (mode === "silent" && brandNew.length > 0 && feedEl.scrollTop > 120) {
+            pendingFreshItems = brandNew;
+            document.getElementById("newStoriesPill").classList.remove("hidden");
+          } else {
+            mergePriorityStories(brandNew.length ? brandNew : curatedStories);
+            renderFeed();
+          }
+          updateAlerts(liveNewsItems);
+          localStorage.setItem("pulse50_last_sync", Date.now().toString());
+        }
+      } finally {
+        if (icon) icon.classList.remove("animate-spin");
+        updateHeaderStatus();
+      }
+    }
+
+    function mergePriorityStories(incoming) {
+      const now = Date.now();
+      const incomingIds = new Set(incoming.map(i => i.id));
+      const stamped = incoming.map((item, i) => ({ ...item, arrivalOrder: now - i }));
+      const remaining = liveNewsItems.filter(item => !incomingIds.has(item.id));
+      liveNewsItems = [...stamped, ...remaining].slice(0, MAX_FEED_WINDOW);
+      try {
+        localStorage.setItem("pulse50_live_v6", JSON.stringify(liveNewsItems));
+      } catch (e) {}
+    }
+
+    function applyPendingStories() {
+      if (pendingFreshItems && pendingFreshItems.length) {
+        mergePriorityStories(pendingFreshItems);
+        pendingFreshItems = null;
+      }
+      document.getElementById("newStoriesPill").classList.add("hidden");
+      activeCategory = "General";
+      pinnedAlertStoryId = null;
+      renderCategories();
+      renderFeed();
+      document.getElementById("feedContainer").scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // 4. NOTIFICATIONS & SEARCH
+    function updateAlerts(stories) {
+      currentTrendingAlerts = stories
+        .filter(s => s.tags.includes("World") || s.tags.includes("India National"))
+        .slice(0, 15);
+      if (currentTrendingAlerts.length) {
+        document.getElementById("alertDot").classList.remove("hidden");
+      }
+    }
+
+    function openNotificationsModal() {
+      const list = document.getElementById("alertsList");
+      if (!currentTrendingAlerts.length) updateAlerts(liveNewsItems);
+      list.innerHTML = currentTrendingAlerts.map((item, idx) => `
+        <button onclick="openAlertByIndex(${idx})" class="w-full text-left p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 transition">
+          <div class="flex items-center justify-between text-[10px] text-indigo-400 font-semibold mb-1">
+            <span>${item.source}</span>
+            <span>${timeAgo(item.pubDate)}</span>
+          </div>
+          <p class="text-xs font-bold text-white line-clamp-2">${item.title}</p>
+        </button>
+      `).join("") || `<p class="text-xs text-slate-400 text-center py-6">No trending alerts yet.</p>`;
+
+      document.getElementById("notificationsModal").classList.remove("hidden");
+      document.getElementById("notificationsModal").classList.add("flex");
+    }
+
+    function closeNotificationsModal() {
+      document.getElementById("notificationsModal").classList.add("hidden");
+      document.getElementById("notificationsModal").classList.remove("flex");
+    }
+
+    function openAlertByIndex(idx) {
+      const story = currentTrendingAlerts[idx];
+      closeNotificationsModal();
+      if (!story) return;
+      pinnedAlertStoryId = story.id;
+      activeCategory = "General";
+      searchQuery = "";
+      document.getElementById("searchBarContainer").classList.add("hidden");
+      renderCategories();
+      renderFeed();
+      document.getElementById("feedContainer").scrollTop = 0;
+    }
+
+    function toggleSearchBar() {
+      const bar = document.getElementById("searchBarContainer");
+      bar.classList.toggle("hidden");
+      if (!bar.classList.contains("hidden")) {
+        document.getElementById("searchInput").focus();
+      } else {
+        clearSearch();
+      }
+    }
+
+    function handleSearchInput(val) {
+      searchQuery = val.trim().toLowerCase();
+      renderFeed();
+      document.getElementById("feedContainer").scrollTop = 0;
+    }
+
+    function clearSearch() {
+      searchQuery = "";
+      document.getElementById("searchInput").value = "";
+      renderFeed();
+    }
+
+    // 5. UI RENDERING (CLEAN IMAGES, ZERO COUNTERS, ONE-TAP ACTIONS)
+    function timeAgo(timestamp) {
+      if (!timestamp) return "Just now";
+      const mins = Math.max(1, Math.floor((Date.now() - new Date(timestamp).getTime()) / 60000));
+      if (mins < 60) return `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      return hrs < 24 ? `${hrs}h ago` : `${Math.floor(hrs / 24)}d ago`;
+    }
+
+    function updateHeaderStatus() {
+      const lastSync = Number(localStorage.getItem("pulse50_last_sync") || 0);
+      const timeStr = lastSync ? new Date(lastSync).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Live";
+      document.getElementById("syncStatus").textContent = `50-Word Desk • Updated ${timeStr}`;
+    }
+
+    function renderCategories() {
+      document.getElementById("categoryBar").innerHTML = CATEGORIES.map(cat => `
+        <button onclick="selectCategory('${cat}')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+          activeCategory === cat ? "bg-indigo-600 text-white shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+        }">${cat === "India States" ? `States: ${selectedState}` : cat}</button>
+      `).join("");
+    }
+
+    function selectCategory(cat) {
+      activeCategory = cat;
+      pinnedAlertStoryId = null;
+      renderCategories();
+      renderFeed();
+      document.getElementById("feedContainer").scrollTop = 0;
+    }
+
+    async function changeIndianState(newState) {
+      selectedState = newState;
+      localStorage.setItem("pulse50_state", newState);
+      renderCategories();
+      const rawState = await fetchStateNews(newState);
+      const curated = clusterAndBuildStories(rawState);
+      if (curated.length) mergePriorityStories(curated);
+      renderFeed();
+    }
+
+    function shareStory(title, link) {
+      if (navigator.share) {
+        navigator.share({ title, url: link }).catch(() => {});
+      } else {
+        navigator.clipboard?.writeText(`${title} — ${link}`);
+      }
+    }
+
+    function renderFeed() {
+      const feed = document.getElementById("feedContainer");
+      const allCombined = [...customPinnedNews, ...liveNewsItems];
+
+      let filtered = allCombined.filter(item => {
+        if (searchQuery) {
+          const hay = `${item.title} ${item.summary} ${item.source} ${item.state || ""}`.toLowerCase();
+          return hay.includes(searchQuery);
+        }
+        if (activeCategory === "General") return true;
+        if (activeCategory === "India States") return item.state === selectedState;
+        return Array.isArray(item.tags) && item.tags.includes(activeCategory);
+      });
+
+      if (pinnedAlertStoryId) {
+        const pinned = allCombined.find(s => s.id === pinnedAlertStoryId);
+        if (pinned) {
+          filtered = [pinned, ...filtered.filter(s => s.id !== pinnedAlertStoryId)];
+        }
+      }
+
+      const stateBarHtml = activeCategory === "India States" && !searchQuery ? `
+        <div class="sticky top-0 z-20 bg-slate-900/95 backdrop-blur px-4 py-2 border-b border-slate-800 flex items-center justify-between gap-2">
+          <span class="text-xs font-semibold text-indigo-300">Select State:</span>
+          <select onchange="changeIndianState(this.value)" class="bg-slate-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700">
+            ${INDIAN_STATES_28.map(st => `<option value="${st}" ${st === selectedState ? "selected" : ""}>${st}</option>`).join("")}
+          </select>
+        </div>` : "";
+
+      if (!filtered.length) {
+        feed.innerHTML = stateBarHtml + `
+          <div class="h-full flex flex-col items-center justify-center p-6 text-center text-slate-400">
+            <p class="text-sm mb-3">No matching stories found right now.</p>
+            <button onclick="fetchLiveNews('manual')" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">Sync Live Feed</button>
+          </div>`;
+        return;
+      }
+
+      feed.innerHTML = stateBarHtml + filtered.slice(0, 80).map((item, idx) => {
+        const safeLink = item.link || "https://news.google.com";
+        const safeSource = String(item.source || "Pulse50 Desk").replace(/'/g, "\\'");
+        const safeCat = String(item.state || item.primaryCategory || "News").replace(/'/g, "\\'");
+        const safeTitleForJs = String(item.title || "").replace(/'/g, "\\'");
+        const hasVideo = Boolean(item.video || item.hasVideo);
+
+        return `
+          <article data-story-id="${item.id}" class="news-card flex flex-col justify-between bg-slate-950 border-b border-slate-900">
+            <!-- 30% Media Banner: HD Image with Blur Rejection Gate OR Vibrant Source Logo -->
+            <div class="relative h-[30%] w-full overflow-hidden shrink-0 bg-slate-900">
+              ${item.image ? `
+                <img src="${item.image}" alt="${item.title}"
+                  onload="if (this.naturalWidth < 480 || this.naturalHeight < 240) { this.onerror(); }"
+                  onerror="this.parentElement.innerHTML = buildVibrantSourceBanner('${safeSource}', '${safeCat}', ${idx})"
+                  class="w-full h-full object-cover object-top transition-opacity duration-300" />
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-black/15"></div>
+              ` : buildVibrantSourceBanner(item.source, item.state || item.primaryCategory || "News", idx)}
+            </div>
+
+            <!-- 70% Factual 50-Word Summary & One-Tap Actions -->
+            <div class="flex-1 px-4 py-3.5 flex flex-col justify-between overflow-hidden">
+              <div>
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                  <span class="font-semibold text-indigo-400 truncate">${item.source} • ${timeAgo(item.pubDate)}</span>
+                </div>
+                <h2 class="text-[17px] sm:text-lg font-extrabold leading-snug mb-2 text-white line-clamp-3">${item.title}</h2>
+                <p class="text-[14.5px] leading-relaxed text-slate-300">${item.summary}</p>
+              </div>
+
+              <div class="pt-2 flex items-center gap-2 shrink-0">
+                ${hasVideo ? `
+                  <button onclick='openVideo(${JSON.stringify({ source: item.source, title: item.title, video: item.video, link: safeLink }).replace(/'/g, "&#39;")})' class="py-2.5 px-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow">
+                    <span>▶ Watch Video</span>
+                  </button>
+                ` : ""}
+                <a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow text-center">
+                  <span>Read Full Story ↗</span>
+                </a>
+                <button onclick="shareStory('${safeTitleForJs}', '${safeLink}')" aria-label="Share story" class="py-2.5 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700">
+                  Share
+                </button>
+              </div>
+            </div>
+          </article>`;
+      }).join("");
+    }
+
+    function openVideo(item) {
+      if (!item.video) {
+        window.open(item.link, "_blank", "noopener,noreferrer");
+        return;
+      }
+      document.getElementById("modalSource").textContent = item.source;
+      document.getElementById("modalTitle").textContent = item.title;
+      document.getElementById("videoFrame").src = item.video;
+      document.getElementById("videoModal").classList.remove("hidden");
+      document.getElementById("videoModal").classList.add("flex");
+    }
+
+    function closeVideo() {
+      document.getElementById("videoFrame").src = "";
+      document.getElementById("videoModal").classList.add("hidden");
+      document.getElementById("videoModal").classList.remove("flex");
+    }
+
+    function openStudio() {
+      document.getElementById("inputDefaultState").value = selectedState;
+      document.getElementById("studioModal").classList.remove("hidden");
+      document.getElementById("studioModal").classList.add("flex");
+    }
+    function closeStudio() {
+      document.getElementById("studioModal").classList.add("hidden");
+      document.getElementById("studioModal").classList.remove("flex");
+    }
+
+    function saveBranding() {
+      const newState = document.getElementById("inputDefaultState").value;
+      changeIndianState(newState);
+      closeStudio();
+    }
+
+    function updateWordCount() {
+      const words = countWords(document.getElementById("newsBody").value);
+      const el = document.getElementById("wordCounter");
+      el.textContent = `${words} / 50 words`;
+      el.className = words > 50 ? "text-rose-400 font-bold" : "text-emerald-400 font-semibold";
+    }
+
+    function publishNews() {
+      const title = document.getElementById("newsHeadline").value.trim();
+      const category = document.getElementById("newsCategory").value;
+      const rawBody = document.getElementById("newsBody").value.trim();
+      const source = document.getElementById("newsSource").value.trim() || "Pulse50 Desk";
+      const image = upgradeToHighResImage(document.getElementById("newsImage").value.trim());
+      const link = document.getElementById("newsLink").value.trim() || "https://news.google.com";
+      const video = document.getElementById("newsVideo").value.trim();
+
+      if (!title || !rawBody) return alert("Please enter a headline and summary.");
+      const summary = mediatorEditTo50Words(rawBody, title, source);
+
+      customPinnedNews.unshift({
+        id: "pin-" + Date.now(),
+        primaryCategory: category,
+        tags: classifyTags(title, summary, category, category === "India States" ? selectedState : null),
+        state: category === "India States" ? selectedState : null,
+        title,
+        summary,
+        source,
+        image,
+        video,
+        hasVideo: Boolean(video),
+        link,
+        pubDate: Date.now()
+      });
+      localStorage.setItem("pulse50_pinned_v6", JSON.stringify(customPinnedNews));
+      renderFeed();
+      closeStudio();
+    }
+
+    document.getElementById("inputDefaultState").innerHTML = INDIAN_STATES_28
+      .map(st => `<option value="${st}" ${st === selectedState ? "selected" : ""}>${st}</option>`)
+      .join("");
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+    }
+
+    updateHeaderStatus();
+    renderCategories();
+    updateAlerts(liveNewsItems);
+    renderFeed();
+    fetchLiveNews("initial");
+
+    setInterval(() => {
+      if (document.visibilityState === "visible") fetchLiveNews("silent");
+    }, 180000);
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") fetchLiveNews("silent");
+    });
+  </script>
+</body>
+</html>
