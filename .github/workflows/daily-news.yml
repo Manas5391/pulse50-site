@@ -1,0 +1,27 @@
+name: Auto-Update Pulse50 50-Word Feed
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-news:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node update-news.js
+      - run: |
+          git config user.name "Pulse50 AutoBot"
+          git config user.email "bot@pulse50.app"
+          git add news.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update 50-word news & podcast gists" && git push)
