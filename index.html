@@ -496,7 +496,7 @@
 
     async function fetchNewsFeed(forceImmediate = false) {
       try {
-        const res = await fetch(`./news.json?v=${Date.now()}`, { cache: 'no-store' });
+        const res = await fetch(`https://raw.githubusercontent.com/Manas5391/pulse50-site/main/news.json?v=${Date.now()}`, { cache: 'no-store' });
         if (!res.ok) return;
         const rawList = await res.json();
         if (!Array.isArray(rawList) || !rawList.length) return;
