@@ -132,8 +132,8 @@
 
   <script>
     const NEWS_JSON_CDN = "https://raw.githubusercontent.com/Manas5391/pulse50-site/main/news.json";
-    const CACHE_KEY = "pulse50_stories_v9";
-    const TRANS_CACHE_KEY = "pulse50_trans_v1";
+    const CACHE_KEY = "pulse50_stories_v10";
+    const TRANS_CACHE_KEY = "pulse50_trans_v2";
 
     const CATEGORIES = [
       "General",
@@ -215,7 +215,7 @@
         </div>`;
     }
 
-    // Free on-device translation with localStorage caching so ALL 9 tabs render in the chosen language
+    // Fallback translation only if an older item lacks pre-written editorial translations
     async function translateText(text, targetLang) {
       if (!text || !targetLang) return text;
       const cacheKey = `${targetLang}:${text.slice(0, 80)}:${text.length}`;
@@ -243,6 +243,7 @@
     async function translateVisibleStories(stories, targetLang) {
       const banner = document.getElementById("translatingBanner");
       const toTranslate = stories.slice(0, 18).filter(item => {
+        if (item.translations && item.translations[targetLang]?.title && item.translations[targetLang]?.summary) return false;
         if ((item.nativeLang || "en") === targetLang) return false;
         const kTitle = `${targetLang}:${item.title.slice(0, 80)}:${item.title.length}`;
         return !translationCache[kTitle];
@@ -263,6 +264,9 @@
     }
 
     function getLocalizedField(item, field) {
+      if (item.translations && item.translations[selectedLang] && item.translations[selectedLang][field]) {
+        return item.translations[selectedLang][field];
+      }
       const raw = item[field] || "";
       if ((item.nativeLang || "en") === selectedLang) return raw;
       const cacheKey = `${selectedLang}:${raw.slice(0, 80)}:${raw.length}`;
