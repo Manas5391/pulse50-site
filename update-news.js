@@ -21,53 +21,38 @@ const parser = new Parser({
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Direct Regional Newspaper & TV RSS Feeds + District Queries for Deep State Coverage
-const STATE_DIRECT_FEEDS = [
-  // Odisha — Multiple Direct Newspapers, TV Channels & District Feeds (Odia)
-  { state: 'Odisha', hl: 'or', source: 'Sambad (ସମ୍ବାଦ)', url: 'https://sambad.in/feed/', limit: 6 },
-  { state: 'Odisha', hl: 'or', source: 'Dharitri (ଧରିତ୍ରୀ)', url: 'https://www.dharitri.com/feed/', limit: 6 },
-  { state: 'Odisha', hl: 'or', source: 'OdishaTV (OTV)', url: 'https://odishatv.in/feed', limit: 6 },
-  { state: 'Odisha', hl: 'or', source: 'Prameya (ପ୍ରମେୟ)', url: 'https://www.prameyanews.com/feed', limit: 5 },
-  { state: 'Odisha', hl: 'or', source: 'Kanak News', url: 'https://kanaknews.com/feed/', limit: 5 },
-  { state: 'Odisha', hl: 'or', source: 'Odisha Districts Desk', url: 'https://news.google.com/rss/search?q=(ଭୁବନେଶ୍ୱର+OR+କଟକ+OR+ପୁରୀ+OR+ସମ୍ବଲପୁର+OR+ବ୍ରହ୍ମପୁର+OR+ବାଲେଶ୍ୱର+OR+ରାଉରକେଲା+OR+କୋରାପୁଟ+OR+ମୟୂରଭଞ୍ଜ+OR+ଯାଜପୁର+OR+ଭଦ୍ରକ+OR+ଅନୁଗୋଳ)+when:2d&hl=or&gl=IN&ceid=IN:or', limit: 10 },
+const LANG_CODES = ['en', 'hi', 'bn', 'mr', 'te', 'ta', 'gu', 'ur', 'kn', 'or', 'ml', 'pa', 'as'];
 
-  // Telangana & Andhra Pradesh (Telugu)
-  { state: 'Telangana', hl: 'te', source: 'Eenadu / Telangana Desk', url: 'https://news.google.com/rss/search?q=(హైదరాబాద్+OR+వరంగల్+OR+నిజామాబాద్+OR+కరీంనగర్+OR+ఖమ్మం+OR+నల్గొండ+OR+తెలంగాణ)+when:2d&hl=te&gl=IN&ceid=IN:te', limit: 10 },
-  { state: 'Andhra Pradesh', hl: 'te', source: 'Sakshi / AP Desk', url: 'https://news.google.com/rss/search?q=(అమరావతి+OR+విశాఖపట్నం+OR+విజయవాడ+OR+తిరుపతి+OR+గుంటూరు+OR+కర్నూలు+OR+ఆంధ్రప్రదేశ్)+when:2d&hl=te&gl=IN&ceid=IN:te', limit: 10 },
-
-  // West Bengal & Tripura (Bengali)
-  { state: 'West Bengal', hl: 'bn', source: 'Anandabazar / Bengal Desk', url: 'https://news.google.com/rss/search?q=(কলকাতা+OR+হাওড়া+OR+দার্জিলিং+OR+শিলিগুড়ি+OR+দুর্গাপুর+OR+বর্ধমান+OR+পশ্চিমবঙ্গ)+when:2d&hl=bn&gl=IN&ceid=IN:bn', limit: 10 },
-  { state: 'Tripura', hl: 'bn', source: 'Tripura Desk', url: 'https://news.google.com/rss/search?q=(আগরতলা+OR+ত্রিপুরা)+when:3d&hl=bn&gl=IN&ceid=IN:bn', limit: 6 },
-
-  // Tamil Nadu (Tamil)
-  { state: 'Tamil Nadu', hl: 'ta', source: 'Dinamalar / TN Desk', url: 'https://news.google.com/rss/search?q=(சென்னை+OR+கோயம்புத்தூர்+OR+மதுரை+OR+திருச்சி+OR+சேலம்+OR+தமிழ்நாடு)+when:2d&hl=ta&gl=IN&ceid=IN:ta', limit: 10 },
-
-  // Karnataka (Kannada)
-  { state: 'Karnataka', hl: 'kn', source: 'Prajavani / Karnataka Desk', url: 'https://news.google.com/rss/search?q=(ಬೆಂಗಳೂರು+OR+ಮೈಸೂರು+OR+ಮಂಗಳೂರು+OR+ಹುಬ್ಬಳ್ಳಿ+OR+ಬೆಳಗಾವಿ+OR+ಕರ್ನಾಟಕ)+when:2d&hl=kn&gl=IN&ceid=IN:kn', limit: 10 }
-];
-
-const REMAINING_STATES = [
-  { name: 'Maharashtra', hl: 'hi', q: 'मुंबई OR पुणे OR नागपूर OR नाशिक OR महाराष्ट्र' },
-  { name: 'Kerala', hl: 'en', q: '"Kerala" (Thiruvananthapuram OR Kochi OR Kozhikode OR Thrissur)' },
-  { name: 'Gujarat', hl: 'hi', q: 'अहमदाबाद OR सूरत OR वडोदरा OR राजकोट OR गुजरात' },
-  { name: 'Punjab', hl: 'hi', q: 'अमृतसर OR लुधियाना OR जालंधर OR पटियाला OR पंजाब' },
-  { name: 'Uttar Pradesh', hl: 'hi', q: 'लखनऊ OR वाराणसी OR कानपुर OR आगरा OR नोएडा OR प्रयागराज' },
-  { name: 'Bihar', hl: 'hi', q: 'पटना OR गया OR मुजफ्फरपुर OR भागलपुर OR दरभंगा' },
-  { name: 'Madhya Pradesh', hl: 'hi', q: 'भोपाल OR इंदौर OR ग्वालियर OR जबलपुर OR उज्जैन' },
-  { name: 'Rajasthan', hl: 'hi', q: 'जयपुर OR जोधपुर OR उदयपुर OR कोटा OR अजमेर' },
-  { name: 'Haryana', hl: 'hi', q: 'गुरुग्राम OR फरीदाबाद OR अंबाला OR हिसार OR रोहतक' },
-  { name: 'Chhattisgarh', hl: 'hi', q: 'रायपुर OR बिलासपुर OR दुर्ग OR बस्तर OR कोरबा' },
-  { name: 'Jharkhand', hl: 'hi', q: 'रांची OR जमशेदपुर OR धनबाद OR बोकारो' },
-  { name: 'Uttarakhand', hl: 'hi', q: 'देहरादून OR हरिद्वार OR नैनीताल OR हल्द्वानी' },
-  { name: 'Himachal Pradesh', hl: 'hi', q: 'शिमला OR मनाली OR धर्मशाला OR कांगड़ा' },
-  { name: 'Assam', hl: 'en', q: '"Assam" (Guwahati OR Dibrugarh OR Silchar OR Jorhat)' },
-  { name: 'Arunachal Pradesh', hl: 'en', q: '"Arunachal Pradesh" (Itanagar OR Tawang)' },
-  { name: 'Goa', hl: 'en', q: '"Goa" (Panaji OR Margao OR Vasco)' },
-  { name: 'Manipur', hl: 'en', q: '"Manipur" (Imphal OR Churachandpur)' },
-  { name: 'Meghalaya', hl: 'en', q: '"Meghalaya" (Shillong OR Tura)' },
-  { name: 'Mizoram', hl: 'en', q: '"Mizoram" (Aizawl OR Lunglei)' },
-  { name: 'Nagaland', hl: 'en', q: '"Nagaland" (Kohima OR Dimapur)' },
-  { name: 'Sikkim', hl: 'en', q: '"Sikkim" (Gangtok OR Namchi)' }
+// All 28 Indian States fetched in clean English with deep district coverage
+const STATE_QUERIES = [
+  { name: 'Odisha', q: '"Odisha" (Bhubaneswar OR Cuttack OR Puri OR Sambalpur OR Berhampur OR Balasore OR Rourkela OR Koraput OR Mayurbhanj OR Jajpur OR Bhadrak OR Angul)', limit: 10 },
+  { name: 'Telangana', q: '"Telangana" (Hyderabad OR Warangal OR Nizamabad OR Karimnagar OR Khammam OR Nalgonda)', limit: 6 },
+  { name: 'Andhra Pradesh', q: '"Andhra Pradesh" (Amaravati OR Visakhapatnam OR Vijayawada OR Tirupati OR Guntur OR Kurnool)', limit: 6 },
+  { name: 'Maharashtra', q: '"Maharashtra" (Mumbai OR Pune OR Nagpur OR Nashik OR Aurangabad OR Kolhapur)', limit: 6 },
+  { name: 'Karnataka', q: '"Karnataka" (Bengaluru OR Mysuru OR Mangaluru OR Hubballi OR Belagavi OR Kalaburagi)', limit: 6 },
+  { name: 'Tamil Nadu', q: '"Tamil Nadu" (Chennai OR Coimbatore OR Madurai OR Tiruchirappalli OR Salem OR Tirunelveli)', limit: 6 },
+  { name: 'West Bengal', q: '"West Bengal" (Kolkata OR Howrah OR Darjeeling OR Siliguri OR Durgapur OR Asansol)', limit: 6 },
+  { name: 'Uttar Pradesh', q: '"Uttar Pradesh" (Lucknow OR Varanasi OR Kanpur OR Agra OR Noida OR Prayagraj OR Gorakhpur)', limit: 6 },
+  { name: 'Bihar', q: '"Bihar" (Patna OR Gaya OR Muzaffarpur OR Bhagalpur OR Darbhanga)', limit: 5 },
+  { name: 'Gujarat', q: '"Gujarat" (Ahmedabad OR Surat OR Vadodara OR Rajkot OR Gandhinagar)', limit: 5 },
+  { name: 'Rajasthan', q: '"Rajasthan" (Jaipur OR Jodhpur OR Udaipur OR Kota OR Ajmer)', limit: 5 },
+  { name: 'Madhya Pradesh', q: '"Madhya Pradesh" (Bhopal OR Indore OR Gwalior OR Jabalpur OR Ujjain)', limit: 5 },
+  { name: 'Kerala', q: '"Kerala" (Thiruvananthapuram OR Kochi OR Kozhikode OR Thrissur OR Kannur)', limit: 5 },
+  { name: 'Punjab', q: '"Punjab" (Amritsar OR Ludhiana OR Jalandhar OR Patiala OR Mohali)', limit: 5 },
+  { name: 'Haryana', q: '"Haryana" (Gurugram OR Faridabad OR Ambala OR Hisar OR Rohtak)', limit: 4 },
+  { name: 'Assam', q: '"Assam" (Guwahati OR Dibrugarh OR Silchar OR Jorhat OR Tezpur)', limit: 5 },
+  { name: 'Chhattisgarh', q: '"Chhattisgarh" (Raipur OR Bilaspur OR Durg OR Bastar OR Korba)', limit: 4 },
+  { name: 'Jharkhand', q: '"Jharkhand" (Ranchi OR Jamshedpur OR Dhanbad OR Bokaro)', limit: 4 },
+  { name: 'Uttarakhand', q: '"Uttarakhand" (Dehradun OR Haridwar OR Nainital OR Haldwani)', limit: 4 },
+  { name: 'Himachal Pradesh', q: '"Himachal Pradesh" (Shimla OR Manali OR Dharamshala OR Kangra)', limit: 4 },
+  { name: 'Arunachal Pradesh', q: '"Arunachal Pradesh" (Itanagar OR Tawang OR Pasighat)', limit: 3 },
+  { name: 'Goa', q: '"Goa" (Panaji OR Margao OR Vasco)', limit: 3 },
+  { name: 'Manipur', q: '"Manipur" (Imphal OR Churachandpur)', limit: 3 },
+  { name: 'Meghalaya', q: '"Meghalaya" (Shillong OR Tura)', limit: 3 },
+  { name: 'Mizoram', q: '"Mizoram" (Aizawl OR Lunglei)', limit: 3 },
+  { name: 'Nagaland', q: '"Nagaland" (Kohima OR Dimapur)', limit: 3 },
+  { name: 'Sikkim', q: '"Sikkim" (Gangtok OR Namchi)', limit: 3 },
+  { name: 'Tripura', q: '"Tripura" (Agartala OR Udaipur)', limit: 3 }
 ];
 
 const CORE_FEEDS = [
@@ -246,23 +231,30 @@ function verifyCategorySemantically(requestedCategory, aiVerifiedCategory, title
   return true;
 }
 
-// Editorial Multilingual Generator: Produces natural, idiomatic headlines & 45-50 word gists in all 7 app languages
-async function generateEditorialMultilingual({ title, rawText, source, suggestedCategory, nativeLang = 'en', stateName = '', isPodcast = false }) {
-  const contextText = (rawText || '').slice(0, 1600);
+// Editorial 13-Language Generator with Retry Backoff:
+// Produces natural, idiomatic headlines & 45-50 word gists in English + all 12 major Indian regional languages
+async function generateEditorial13Lang({ title, rawText, source, suggestedCategory, stateName = '', isPodcast = false }) {
+  const contextText = (rawText || '').slice(0, 1500);
 
-  const prompt = `You are the chief multilingual news editor for Pulse50. Read the story below and produce natural, journalistic, grammatically complete headlines and 45 to 50 word summaries in ALL 7 languages:
+  const prompt = `You are the chief multilingual news editor for Pulse50. Read the story below and produce natural, journalistic, grammatically complete headlines and 45 to 50 word summaries in ALL 13 languages:
 - en (English)
-- or (Odia / ଓଡ଼ିଆ)
 - hi (Hindi / हिंदी)
 - bn (Bengali / বাংলা)
+- mr (Marathi / मराठी)
 - te (Telugu / తెలుగు)
 - ta (Tamil / தமிழ்)
+- gu (Gujarati / ગુજરાતી)
+- ur (Urdu / اردو)
 - kn (Kannada / ಕನ್ನಡ)
+- or (Odia / ଓଡ଼ିଆ)
+- ml (Malayalam / മലയാളം)
+- pa (Punjabi / ਪੰਜਾਬੀ)
+- as (Assamese / অসমীয়া)
 
 CRITICAL EDITORIAL RULES:
-1. NEVER do word-for-word machine translation. Write natural, idiomatic sentences as a native newspaper editor would write in each script.
-2. Convert numbers, currency, and idioms properly into each language (e.g., "Rs. 2.30 crores" -> "₹2.30 करोड़" in Hindi, "₹୨.୩୦ କୋଟି" or "₹2.30 କୋଟି" in Odia — NEVER split "Rs." from the number).
-3. Transliterate or translate all English words cleanly into the target script (never leave broken English fragments like "ity" or random English verbs inside Odia/Hindi/Telugu sentences).
+1. NEVER do word-for-word machine translation. Write natural, idiomatic, complete sentences as a senior native newspaper editor would write in each script.
+2. Format Indian currency and numbers naturally inside each language (e.g., "Rs. 2.30 crores" -> "₹2.30 crore" in English, "₹2.30 करोड़" in Hindi, "₹2.30 କୋଟି" in Odia — NEVER split currency symbols from digits).
+3. Transliterate or translate ALL English words cleanly into the target script — NEVER leave stray English words or suffixes inside regional language sentences.
 4. Each summary MUST be 44 to 50 words, end with a proper sentence terminator (. or ।), include concrete facts (who, what, where, district/impact), and NEVER repeat the headline verbatim or mention "${source}".
 5. ${isPodcast ? 'Categories MUST be ["Podcasts"].' : 'Classify from ONLY: ["India National", "World", "Politics", "Sports", "Entertainment", "Science & Education"].'}
 ${stateName ? `6. Highlight the specific district and local impact in ${stateName}.` : ''}
@@ -272,57 +264,69 @@ Return ONLY valid JSON in this exact schema:
   "categories": ["..."],
   "translations": {
     "en": { "title": "...", "summary": "..." },
-    "or": { "title": "...", "summary": "..." },
     "hi": { "title": "...", "summary": "..." },
     "bn": { "title": "...", "summary": "..." },
+    "mr": { "title": "...", "summary": "..." },
     "te": { "title": "...", "summary": "..." },
     "ta": { "title": "...", "summary": "..." },
-    "kn": { "title": "...", "summary": "..." }
+    "gu": { "title": "...", "summary": "..." },
+    "ur": { "title": "...", "summary": "..." },
+    "kn": { "title": "...", "summary": "..." },
+    "or": { "title": "...", "summary": "..." },
+    "ml": { "title": "...", "summary": "..." },
+    "pa": { "title": "...", "summary": "..." },
+    "as": { "title": "...", "summary": "..." }
   }
 }
 
-Original Headline: ${title}
+Headline: ${title}
 Suggested Category: ${suggestedCategory}
 Source Material: ${contextText || title}`;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: { responseMimeType: 'application/json' }
-    });
-    const parsed = JSON.parse(response?.text || '{}');
-    const tr = parsed.translations || {};
-    const cleanTranslations = {};
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: { responseMimeType: 'application/json' }
+      });
+      const parsed = JSON.parse(response?.text || '{}');
+      const tr = parsed.translations || {};
+      const cleanTranslations = {};
 
-    for (const code of ['en', 'or', 'hi', 'bn', 'te', 'ta', 'kn']) {
-      if (tr[code]?.title && tr[code]?.summary) {
-        cleanTranslations[code] = {
-          title: cleanHtml(tr[code].title),
-          summary: ensureCompleteSummary(tr[code].summary, tr[code].title)
-        };
+      for (const code of LANG_CODES) {
+        if (tr[code]?.title && tr[code]?.summary) {
+          cleanTranslations[code] = {
+            title: cleanHtml(tr[code].title),
+            summary: ensureCompleteSummary(tr[code].summary, tr[code].title)
+          };
+        }
       }
+
+      const enTitle = cleanTranslations.en?.title || title;
+      const enSummary = cleanTranslations.en?.summary || ensureCompleteSummary(contextText, title);
+      const aiCats = Array.isArray(parsed.categories) ? parsed.categories : [suggestedCategory];
+
+      return {
+        title: enTitle,
+        summary: enSummary,
+        translations: cleanTranslations,
+        verifiedCategories: aiCats
+      };
+    } catch (err) {
+      const status = err?.status || '';
+      console.warn(`Attempt ${attempt} failed for "${title.slice(0, 35)}" (${status || err?.message})`);
+      if (attempt < 3) await sleep(attempt * 3000);
     }
-
-    const baseTitle = cleanTranslations[nativeLang]?.title || cleanTranslations.en?.title || title;
-    const baseSummary = cleanTranslations[nativeLang]?.summary || cleanTranslations.en?.summary || ensureCompleteSummary(contextText, title);
-    const aiCats = Array.isArray(parsed.categories) ? parsed.categories : [suggestedCategory];
-
-    return {
-      title: baseTitle,
-      summary: baseSummary,
-      translations: cleanTranslations,
-      verifiedCategories: aiCats
-    };
-  } catch (err) {
-    console.warn(`Multilingual Gemini fallback for "${title.slice(0, 35)}":`, err?.status || err?.message);
-    return {
-      title,
-      summary: ensureCompleteSummary(contextText, title),
-      translations: { [nativeLang]: { title, summary: ensureCompleteSummary(contextText, title) } },
-      verifiedCategories: [suggestedCategory]
-    };
   }
+
+  const fallbackSummary = ensureCompleteSummary(contextText, title);
+  return {
+    title,
+    summary: fallbackSummary,
+    translations: { en: { title, summary: fallbackSummary } },
+    verifiedCategories: [suggestedCategory]
+  };
 }
 
 async function run() {
@@ -330,13 +334,13 @@ async function run() {
   const seenTitles = new Set();
 
   const addUnique = (story) => {
-    const key = (story.translations?.en?.title || story.title).toLowerCase().replace(/\s+/g, '').slice(0, 60);
+    const key = story.title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 60);
     if (!key || seenTitles.has(key)) return;
     seenTitles.add(key);
     allStories.push(story);
   };
 
-  console.log('1. Fetching Core Category Feeds (7-Language Native Editorial)...');
+  console.log('1. Fetching Core Category Feeds (English Base + 13 Indian Languages)...');
   for (const feed of CORE_FEEDS) {
     try {
       const parsed = await parser.parseURL(feed.url);
@@ -353,12 +357,11 @@ async function run() {
           if (scraped.text.length > bodyText.length) bodyText = scraped.text;
         }
 
-        const editorial = await generateEditorialMultilingual({
+        const editorial = await generateEditorial13Lang({
           title: rawTitle,
           rawText: bodyText,
           source: feed.source,
-          suggestedCategory: feed.category,
-          nativeLang: 'en'
+          suggestedCategory: feed.category
         });
 
         const finalTags = new Set(['General']);
@@ -386,72 +389,19 @@ async function run() {
           link: item.link || '',
           pubDate: item.isoDate || item.pubDate || new Date().toISOString()
         });
-        await sleep(1200);
+        await sleep(1500);
       }
     } catch (e) {
       console.warn(`Core feed error (${feed.source}):`, e.message);
     }
   }
 
-  console.log('2. Fetching Direct Regional Newspapers, TV & District Feeds...');
-  for (const sFeed of STATE_DIRECT_FEEDS) {
+  console.log('2. Fetching All 28 Indian States (Uniform English Base + 13 Languages)...');
+  for (const st of STATE_QUERIES) {
     try {
-      const parsed = await parser.parseURL(sFeed.url);
-      const items = (parsed.items || []).slice(0, sFeed.limit);
-      for (const item of items) {
-        const parts = cleanHtml(item.title || '').split(' - ');
-        const extractedSource = parts.length > 1 ? parts.pop().trim() : sFeed.source;
-        const rawTitle = parts.join(' - ').trim();
-        if (!rawTitle) continue;
-
-        let img = extractRssImage(item);
-        let bodyText = cleanHtml(item['content:encoded'] || item.contentSnippet || item.description || '');
-        if (!img || bodyText.split(/\s+/).length < 25) {
-          const scraped = await scrapeArticleDetails(item.link);
-          if (!img && scraped.image) img = scraped.image;
-          if (scraped.text.length > bodyText.length) bodyText = scraped.text;
-        }
-
-        const editorial = await generateEditorialMultilingual({
-          title: rawTitle,
-          rawText: bodyText || rawTitle,
-          source: extractedSource,
-          suggestedCategory: 'State',
-          nativeLang: sFeed.hl,
-          stateName: sFeed.state
-        });
-
-        addUnique({
-          id: Buffer.from(`${sFeed.state}-${rawTitle}`).toString('base64').slice(0, 24),
-          category: 'State',
-          primaryCategory: 'State',
-          tags: ['State'],
-          stateTags: [sFeed.state],
-          nativeLang: sFeed.hl,
-          title: editorial.title,
-          summary: editorial.summary,
-          translations: editorial.translations,
-          source: extractedSource,
-          image: img,
-          video: '',
-          link: item.link || '',
-          pubDate: item.isoDate || item.pubDate || new Date().toISOString()
-        });
-        await sleep(1200);
-      }
-    } catch (e) {
-      console.warn(`Direct state feed error (${sFeed.source}):`, e.message);
-    }
-  }
-
-  console.log('3. Fetching Remaining States District Feeds...');
-  for (const st of REMAINING_STATES) {
-    try {
-      const ceid = st.hl === 'hi' ? 'IN:hi' : 'IN:en';
-      const hlParam = st.hl === 'hi' ? 'hi' : 'en-IN';
-      const stateUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(`(${st.q}) when:3d`)}&hl=${hlParam}&gl=IN&ceid=${ceid}`;
+      const stateUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(`${st.q} when:3d`)}&hl=en-IN&gl=IN&ceid=IN:en`;
       const parsed = await parser.parseURL(stateUrl);
-      const items = (parsed.items || []).slice(0, 5);
+      const items = (parsed.items || []).slice(0, st.limit);
 
       for (const item of items) {
         const parts = cleanHtml(item.title || '').split(' - ');
@@ -460,12 +410,11 @@ async function run() {
         if (!rawTitle) continue;
 
         const snippet = cleanHtml(item.contentSnippet || item.description || rawTitle);
-        const editorial = await generateEditorialMultilingual({
+        const editorial = await generateEditorial13Lang({
           title: rawTitle,
           rawText: snippet,
           source: sourceName,
           suggestedCategory: 'State',
-          nativeLang: st.hl,
           stateName: st.name
         });
 
@@ -475,7 +424,7 @@ async function run() {
           primaryCategory: 'State',
           tags: ['State'],
           stateTags: [st.name],
-          nativeLang: st.hl,
+          nativeLang: 'en',
           title: editorial.title,
           summary: editorial.summary,
           translations: editorial.translations,
@@ -485,14 +434,14 @@ async function run() {
           link: item.link || '',
           pubDate: item.isoDate || item.pubDate || new Date().toISOString()
         });
-        await sleep(1200);
+        await sleep(1500);
       }
     } catch (e) {
-      console.warn(`Remaining state error (${st.name}):`, e.message);
+      console.warn(`State feed error (${st.name}):`, e.message);
     }
   }
 
-  console.log('4. Fetching Podcasts (7-Language Native Editorial)...');
+  console.log('3. Fetching Podcasts (English Base + 13 Languages)...');
   for (const pod of PODCAST_FEEDS) {
     try {
       const parsed = await parser.parseURL(pod.url);
@@ -506,12 +455,11 @@ async function run() {
         const thumb = videoId ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` : extractRssImage(item);
         const rawDesc = sanitizePodcastDescription(item.mediaGroup?.['media:description']?.[0] || item.contentSnippet || item.description || '');
 
-        const editorial = await generateEditorialMultilingual({
+        const editorial = await generateEditorial13Lang({
           title: rawTitle,
           rawText: rawDesc || rawTitle,
           source: pod.source,
           suggestedCategory: 'Podcasts',
-          nativeLang: 'en',
           isPodcast: true
         });
 
@@ -531,7 +479,7 @@ async function run() {
           link: link || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : ''),
           pubDate: item.isoDate || item.pubDate || new Date().toISOString()
         });
-        await sleep(1200);
+        await sleep(1500);
       }
     } catch (e) {
       console.warn(`Podcast error (${pod.source}):`, e.message);
