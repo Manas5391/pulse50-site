@@ -138,18 +138,17 @@
       'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
     ];
 
-    // Live Category-Specific RSS Endpoints (Triggered whenever a user switches to that tab!)
+    // Direct RSS endpoints that carry real article descriptions (never headline-only Google News RSS)
     const LIVE_CATEGORY_ENDPOINTS = {
       'India National': 'https://www.thehindu.com/news/national/feeder/default.rss',
       'World': 'https://feeds.bbci.co.uk/news/world/rss.xml',
-      'Politics': 'https://news.google.com/rss/search?q=India+Politics+Parliament+Government+when:1d&hl=en-IN&gl=IN&ceid=IN:en',
+      'Politics': 'https://www.thehindu.com/news/national/feeder/default.rss',
       'Sports': 'https://feeds.bbci.co.uk/sport/rss.xml',
-      'Entertainment': 'https://www.bollywoodhungama.com/rss/news.xml',
-      'Podcasts': 'https://www.youtube.com/feeds/videos.xml?channel_id=UCzwCEE_PchiBULMnAJqhGVg'
+      'Entertainment': 'https://www.bollywoodhungama.com/rss/news.xml'
     };
 
     const MAX_FEED_WINDOW = 600;
-    const STORAGE_KEY = 'pulse50_stories_v7';
+    const STORAGE_KEY = 'pulse50_stories_v8';
 
     let allStories = [];
     let pendingStories = [];
@@ -165,7 +164,19 @@
     const newFeedsPill = document.getElementById('newFeedsPill');
     const deskSubtitle = document.getElementById('deskSubtitle');
 
-    function sanitizeSummaryText(text) {
+    function isSummaryJustHeadline(summary, title) {
+      const norm = (s) => String(s || '')
+        .replace(/\s+[-–|]\s*(The Times of India|Times of India|India Today|The New Indian Express|NDTV|The Hindu|Hindustan Times|Indian Express)\.?\s*$/i, '')
+        .replace(/\s+(The Times of India|Times of India|India Today|The New Indian Express|NDTV|The Hindu|Hindustan Times|Indian Express)\.?\s*$/i, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+      const a = norm(summary);
+      const b = norm(title);
+      if (!a || !b) return true;
+      return a === b || a.startsWith(b) || b.startsWith(a);
+    }
+
+    function sanitizeSummaryText(text, title = '') {
       if (!text) return '';
       let clean = String(text)
         .replace(/<[^>]*>/g, ' ')
@@ -173,11 +184,17 @@
         .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '')
         .replace(/Account subscription benefits alongside Premium Stories[\s\S]*?Subscription/gi, '')
         .replace(/Updated\s*-\s*[A-Za-z]+\s+\d+,\s*\d{4}\s+\d+:\d+\s*(?:am|pm)\s*IST\s*-?/gi, '')
+        .replace(/Get your hand-picked playbook[\s\S]*?(?=Disclaimer:|$)/gi, '')
+        .replace(/Guest Suggestion Form:[\s\S]*?(?=Disclaimer:|$)/gi, '')
+        .replace(/Design Your Own Podcast Episode:[\s\S]*?(?=Disclaimer:|$)/gi, '')
+        .replace(/Disclaimer:\s*This video is intended solely[\s\S]*$/gi, '')
         .replace(/Email to:.*$/gis, '')
         .replace(/Copyrights?\s*©.*$/gis, '')
         .replace(/[-_=]{4,}/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
+
+      if (title && isSummaryJustHeadline(clean, title)) return '';
 
       const words = clean.split(/\s+/).filter(Boolean);
       if (words.length > 50) {
@@ -199,7 +216,7 @@
         .replace(/([?&])(w|width|h|height|quality|q)=\d+/gi, '')
         .replace(/resize=\d+[,x]\d+/gi, 'resize=1200,675')
         .replace(/-\d{2,3}x\d{2,3}(\.(?:jpg|jpeg|png|webp))/gi, '$1')
-        .replace(/\/(sddefault|mqdefault|default)\.jpg/i, '/hqdefault.jpg')
+        .replace(/\/(hqdefault|sddefault|mqdefault|default)\.jpg/i, '/maxresdefault.jpg')
         .replace(/[?&]+$/, '');
     }
 
@@ -227,8 +244,10 @@
     }
 
     function normalizeStory(raw) {
-      const title = (raw.title || '').trim();
-      const summary = sanitizeSummaryText(raw.summary || '');
+      const title = (raw.title || '')
+        .replace(/\s+[-–|]\s*(The Times of India|Times of India|India Today|The New Indian Express|NDTV|The Hindu|Hindustan Times|Indian Express)\.?\s*$/i, '')
+        .trim();
+      const summary = sanitizeSummaryText(raw.summary || '', title);
       const source = (raw.source || 'Pulse50 Desk').trim();
       const category = raw.category || 'General';
       const state = raw.state || '';
@@ -250,9 +269,10 @@
 
     function loadCachedStories() {
       try {
+        localStorage.removeItem('pulse50_stories_v7');
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
         if (Array.isArray(saved)) {
-          allStories = saved.map(normalizeStory).filter((s) => s.title && s.summary);
+          allStories = saved.map(normalizeStory).filter((s) => s.title && s.summary && s.summary.split(/\s+/).length >= 16);
         }
       } catch {
         allStories = [];
@@ -265,7 +285,7 @@
       } catch {}
     }
 
-    function buildBannerMarkup(story) {
+    function buildBannerMarkup(story, isPodcast = false) {
       const grad = getVibrantGradient(story.source + story.category);
       const fallbackHtml = `
         <div class="w-full h-full bg-gradient-to-br ${grad} flex flex-col items-center justify-center px-4 text-center">
@@ -279,20 +299,19 @@
 
       if (!story.image) return fallbackHtml;
 
-      // Reject blurry/low-res thumbnails (< 480x240 px) and always fill area cleanly
+      const fitClass = isPodcast ? 'w-full h-full object-contain' : 'w-full h-full object-cover object-top';
       return `
         <img
           src="${story.image}"
           alt=""
           loading="lazy"
-          class="w-full h-full object-cover object-top"
-          onerror="this.parentElement.innerHTML=\`${fallbackHtml.replace(/"/g, '&quot;').replace(/\n/g, '')}\`"
-          onload="if(this.naturalWidth < 480 || this.naturalHeight < 240){ this.onerror(); }"
+          class="${fitClass}"
+          onerror="if(this.src.includes('maxresdefault.jpg')){ this.src=this.src.replace('maxresdefault.jpg','hqdefault.jpg'); return; } this.parentElement.innerHTML=\`${fallbackHtml.replace(/"/g, '&quot;').replace(/\n/g, '')}\`"
+          onload="if(!${isPodcast} && (this.naturalWidth < 480 || this.naturalHeight < 240)){ this.onerror(); }"
         />
       `;
     }
 
-    // General = Curated Top Trending across all domains; Specific Tab = Dedicated Category Stories
     function getFilteredStories() {
       return allStories.filter((story) => {
         if (searchQuery) {
@@ -315,11 +334,11 @@
       });
     }
 
-    // Fetch additional live stories on demand whenever user switches to a specific Category or State!
-    async function fetchMoreForBucket(bucketKey, rssUrl, targetCategory, targetState = '') {
-      if (fetchedLiveBuckets.has(bucketKey)) return;
+    // Fetch supplementary stories only from feeds with real article bodies (never headline-only RSS)
+    async function fetchMoreForBucket(bucketKey, rssUrl, targetCategory) {
+      if (!rssUrl || fetchedLiveBuckets.has(bucketKey)) return;
       fetchedLiveBuckets.add(bucketKey);
-      deskSubtitle.textContent = `Fetching live ${targetState || targetCategory}...`;
+      deskSubtitle.textContent = `Fetching live ${targetCategory}...`;
 
       try {
         const api = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&_t=${Math.floor(Date.now() / 60000)}`;
@@ -331,21 +350,19 @@
         const existingTitles = new Set(allStories.map((s) => s.title.toLowerCase()));
         const freshBucketStories = [];
 
-        for (const item of data.items.slice(0, 10)) {
+        for (const item of data.items.slice(0, 8)) {
           const rawTitle = item.title || '';
           if (item.link?.includes('/shorts/') || /#shorts|\blive:/i.test(rawTitle)) continue;
 
           const sourceMatch = rawTitle.match(/\s+-\s+([^-]+)$/);
-          const pubSource = sourceMatch ? sourceMatch[1].trim() : (targetState ? `${targetState} Desk` : targetCategory);
+          const pubSource = sourceMatch ? sourceMatch[1].trim() : targetCategory;
           const title = rawTitle.replace(/\s+-\s+[^-]+$/, '').replace(/#[\w]+/g, '').trim();
           if (!title || title.length < 15 || existingTitles.has(title.toLowerCase())) continue;
 
-          const summary = sanitizeSummaryText(item.description || item.content || title);
-          if (!summary || summary.split(/\s+/).length < 12) continue;
+          const summary = sanitizeSummaryText(item.description || item.content || '', title);
+          if (!summary || summary.split(/\s+/).length < 18) continue;
 
-          let img = upgradeImageUrl(item.thumbnail || item.enclosure?.link || '');
-          const ytMatch = (item.link || '').match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-          if (ytMatch) img = `https://i.ytimg.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+          const img = upgradeImageUrl(item.thumbnail || item.enclosure?.link || '');
 
           existingTitles.add(title.toLowerCase());
           freshBucketStories.push({
@@ -355,10 +372,10 @@
             source: pubSource,
             category: targetCategory,
             isTrending: false,
-            state: targetState,
+            state: '',
             image: img,
             url: item.link || '',
-            videoUrl: targetCategory === 'Podcasts' ? (item.link || '') : '',
+            videoUrl: '',
             pubDate: item.pubDate ? new Date(item.pubDate).getTime() : Date.now()
           });
         }
@@ -366,10 +383,7 @@
         if (freshBucketStories.length > 0) {
           allStories = [...freshBucketStories, ...allStories].slice(0, MAX_FEED_WINDOW);
           saveCachedStories();
-          if (
-            (targetState && activeCategory === 'India States' && selectedState === targetState) ||
-            (!targetState && activeCategory === targetCategory)
-          ) {
+          if (activeCategory === targetCategory) {
             renderFeed(feedContainer.scrollTop < 15);
           }
         }
@@ -403,16 +417,7 @@
           renderCategories();
           renderFeed(true);
 
-          // Automatically fetch deeper category-specific or state-specific stories on tab switch
-          if (activeCategory === 'India States') {
-            const q = encodeURIComponent(`"${selectedState}" government OR chief minister OR news when:3d`);
-            fetchMoreForBucket(
-              `state:${selectedState}`,
-              `https://news.google.com/rss/search?q=${q}&hl=en-IN&gl=IN&ceid=IN:en`,
-              'India States',
-              selectedState
-            );
-          } else if (LIVE_CATEGORY_ENDPOINTS[activeCategory]) {
+          if (LIVE_CATEGORY_ENDPOINTS[activeCategory]) {
             fetchMoreForBucket(
               `cat:${activeCategory}`,
               LIVE_CATEGORY_ENDPOINTS[activeCategory],
@@ -430,7 +435,7 @@
         feedContainer.innerHTML = `
           <div class="h-full flex flex-col items-center justify-center px-6 text-center">
             <p class="text-sm text-slate-400 mb-3">
-              ${activeCategory === 'India States' ? `Fetching live stories for ${selectedState}...` : `Fetching latest ${activeCategory} stories...`}
+              ${activeCategory === 'India States' ? `Syncing verified AI briefs for ${selectedState}...` : `Fetching latest ${activeCategory} stories...`}
             </p>
             <button onclick="fetchNewsFeed(true)" class="px-4 py-2 rounded-full bg-indigo-600 text-white text-xs font-semibold">
               ↻ Sync Latest Feed
@@ -443,11 +448,14 @@
       feedContainer.innerHTML = items.map((story) => {
         const isPodcast = story.category === 'Podcasts' || Boolean(story.videoUrl);
         const targetLink = story.videoUrl || story.url || '#';
+        const mediaWrapperClass = isPodcast
+          ? 'relative w-full aspect-video max-h-[34%] shrink-0 bg-black overflow-hidden'
+          : 'relative w-full h-[30%] shrink-0 bg-slate-900 overflow-hidden';
         return `
           <article class="news-card">
-            <!-- 30% Sharp Image or Vibrant Brand Banner -->
-            <div class="relative w-full h-[30%] shrink-0 bg-slate-900 overflow-hidden">
-              ${buildBannerMarkup(story)}
+            <!-- Sharp Image (Full 16:9 for Podcasts, 30% Cover for News) or Vibrant Brand Banner -->
+            <div class="${mediaWrapperClass}">
+              ${buildBannerMarkup(story, isPodcast)}
             </div>
 
             <!-- Content Body -->
@@ -501,7 +509,7 @@
         const rawList = await res.json();
         if (!Array.isArray(rawList) || !rawList.length) return;
 
-        const incoming = rawList.map(normalizeStory).filter((s) => s.title && s.summary);
+        const incoming = rawList.map(normalizeStory).filter((s) => s.title && s.summary && s.summary.split(/\s+/).length >= 16);
         const existingTitles = new Set(allStories.map((s) => s.title.toLowerCase()));
         const brandNew = incoming.filter((s) => !existingTitles.has(s.title.toLowerCase()));
 
@@ -539,7 +547,7 @@
       renderFeed(true);
     };
 
-    // Init State Dropdown + Live State Fetching
+    // Init State Dropdown
     stateSelect.innerHTML = INDIAN_STATES.map(
       (st) => `<option value="${st}" ${st === selectedState ? 'selected' : ''}>${st}</option>`
     ).join('');
@@ -548,13 +556,6 @@
       selectedState = stateSelect.value;
       renderCategories();
       renderFeed(true);
-      const q = encodeURIComponent(`"${selectedState}" government OR chief minister OR news when:3d`);
-      fetchMoreForBucket(
-        `state:${selectedState}`,
-        `https://news.google.com/rss/search?q=${q}&hl=en-IN&gl=IN&ceid=IN:en`,
-        'India States',
-        selectedState
-      );
     };
 
     // Search Controls
@@ -574,7 +575,7 @@
       renderFeed(true);
     };
 
-    // Notifications Drawer (Direct Click Routing)
+    // Notifications Drawer
     document.getElementById('notifBtn').onclick = () => {
       const alerts = allStories.filter((s) => s.isTrending).slice(0, 12);
       const list = document.getElementById('notifList');
