@@ -145,7 +145,7 @@ async function run() {
 
         const ytMatch = (item.link || "").match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
         const video = ytMatch ? `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1` : "";
-        const image = ytMatch ? `https://i.ytimg.com/vi/${ytMatch[1]}/hqdefault.jpg` : (item.enclosure?.url || "");
+        const image = ytMatch ? `https://i.ytimg.com/vi/${ytMatch[1]}/maxresdefault.jpg` : (item.enclosure?.url || "");
 
         results.push({
           id: Buffer.from(cleanTitle).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 22),
@@ -179,9 +179,3 @@ async function run() {
 }
 
 run();
-```[cite: 10]
-
-4. Click **Commit changes…** (green button) → **Commit changes** to save it directly to `main`.
-5. Go to **Actions** → **Auto-Update Pulse50 50-Word Feed** → **Run workflow** to verify the green checkmark (**✓**).
-
-*(Also replace your local `C:\Users\admin\desktop\pulse50-site\update-news.js` with this exact same code so future local pushes don't overwrite it with the old `require` version.)*[cite: 5, 10]
