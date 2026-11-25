@@ -122,7 +122,7 @@
 
   <script>
     const NEWS_FEED_URL = "https://raw.githubusercontent.com/Manas5391/pulse50-site/main/news.json";
-    const CACHE_KEY = "pulse50_stories_v9";
+    const CACHE_KEY = "pulse50_stories_v10";
     const MAX_FEED_WINDOW = 600;
 
     const CATEGORIES = [
@@ -232,17 +232,49 @@
       renderFeed(true);
     }
 
+    // Interleaves stories across diverse topics so General never shows one category block after another
+    function buildBlendedGeneralFeed(stories) {
+      const candidates = stories
+        .filter((s) => s.category !== "Podcasts")
+        .sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
+
+      const buckets = {};
+      for (const s of candidates) {
+        const key = s.primaryCategory || s.category || "General";
+        if (!buckets[key]) buckets[key] = [];
+        buckets[key].push(s);
+      }
+
+      const keys = Object.keys(buckets);
+      const blended = [];
+      let added = true;
+      while (added) {
+        added = false;
+        for (const k of keys) {
+          if (buckets[k].length > 0) {
+            blended.push(buckets[k].shift());
+            added = true;
+          }
+        }
+      }
+      return blended;
+    }
+
     function getFilteredStories() {
       if (activeCategory === "General") {
-        return allStories.filter((s) => s.category !== "India States" && s.category !== "Podcasts");
+        return buildBlendedGeneralFeed(allStories);
       }
       if (activeCategory === "India States") {
-        return allStories.filter((s) =>
-          (Array.isArray(s.stateTags) && s.stateTags.includes(selectedState)) ||
-          (s.category === "India States" && (s.title || "").toLowerCase().includes(selectedState.toLowerCase()))
-        );
+        return allStories
+          .filter((s) =>
+            (Array.isArray(s.stateTags) && s.stateTags.includes(selectedState)) ||
+            (s.category === "India States" && (s.title || "").toLowerCase().includes(selectedState.toLowerCase()))
+          )
+          .sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
       }
-      return allStories.filter((s) => s.category === activeCategory || (Array.isArray(s.tags) && s.tags.includes(activeCategory)));
+      return allStories
+        .filter((s) => s.category === activeCategory || (Array.isArray(s.tags) && s.tags.includes(activeCategory)))
+        .sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
     }
 
     function renderFeed(resetScroll = false) {
@@ -286,7 +318,7 @@
               <div class="${mediaBoxClass}">
                 ${item.image ? `
                   <img src="${escapeHtml(item.image)}" alt="${safeTitle}"
-                    onload="if (!${isPodcast} && (this.naturalWidth < 200 || this.naturalHeight < 120)) { this.onerror(); }"
+                    onload="if (!${isPodcast} && (this.naturalWidth < 360 || this.naturalHeight < 180)) { this.onerror(); }"
                     onerror="if (this.src.includes('maxresdefault.jpg')) { this.src = this.src.replace('maxresdefault.jpg', 'hqdefault.jpg'); return; } this.parentElement.innerHTML = buildVibrantSourceBanner('${safeSource.replace(/'/g, "\\'")}', '${safeCat.replace(/'/g, "\\'")}', ${idx})"
                     class="${mediaImgClass}" />
                 ` : buildVibrantSourceBanner(item.source, item.primaryCategory || item.category || "News", idx)}
@@ -425,7 +457,8 @@
       modal.classList.toggle("hidden");
       if (!modal.classList.contains("hidden")) {
         const list = document.getElementById("alertsList");
-        list.innerHTML = allStories.slice(0, 10).map((s) => `
+        const alerts = buildBlendedGeneralFeed(allStories).slice(0, 15);
+        list.innerHTML = alerts.map((s) => `
           <a href="${escapeHtml(s.link || "#")}" target="_blank" class="block p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800">
             <div class="text-[11px] text-amber-400 font-semibold">${escapeHtml(s.source)} • ${timeAgo(s.pubDate)}</div>
             <div class="text-xs font-bold text-white mt-0.5">${escapeHtml(s.title)}</div>
