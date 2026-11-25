@@ -21,7 +21,8 @@ const parser = new Parser({
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const LANG_CODES = ['en', 'hi', 'bn', 'mr', 'te', 'ta', 'gu', 'ur', 'kn', 'or', 'ml', 'pa', 'as'];
+// 8 High-Demand Indian Languages (Keeps Gemini JSON fast, complete & 100% accurate)
+const LANG_CODES = ['en', 'hi', 'bn', 'mr', 'te', 'ta', 'kn', 'or'];
 
 // All 28 Indian States fetched in clean English with deep district coverage
 const STATE_QUERIES = [
@@ -32,27 +33,27 @@ const STATE_QUERIES = [
   { name: 'Karnataka', q: '"Karnataka" (Bengaluru OR Mysuru OR Mangaluru OR Hubballi OR Belagavi OR Kalaburagi)', limit: 6 },
   { name: 'Tamil Nadu', q: '"Tamil Nadu" (Chennai OR Coimbatore OR Madurai OR Tiruchirappalli OR Salem OR Tirunelveli)', limit: 6 },
   { name: 'West Bengal', q: '"West Bengal" (Kolkata OR Howrah OR Darjeeling OR Siliguri OR Durgapur OR Asansol)', limit: 6 },
-  { name: 'Uttar Pradesh', q: '"Uttar Pradesh" (Lucknow OR Varanasi OR Kanpur OR Agra OR Noida OR Prayagraj OR Gorakhpur)', limit: 6 },
-  { name: 'Bihar', q: '"Bihar" (Patna OR Gaya OR Muzaffarpur OR Bhagalpur OR Darbhanga)', limit: 5 },
-  { name: 'Gujarat', q: '"Gujarat" (Ahmedabad OR Surat OR Vadodara OR Rajkot OR Gandhinagar)', limit: 5 },
-  { name: 'Rajasthan', q: '"Rajasthan" (Jaipur OR Jodhpur OR Udaipur OR Kota OR Ajmer)', limit: 5 },
-  { name: 'Madhya Pradesh', q: '"Madhya Pradesh" (Bhopal OR Indore OR Gwalior OR Jabalpur OR Ujjain)', limit: 5 },
-  { name: 'Kerala', q: '"Kerala" (Thiruvananthapuram OR Kochi OR Kozhikode OR Thrissur OR Kannur)', limit: 5 },
-  { name: 'Punjab', q: '"Punjab" (Amritsar OR Ludhiana OR Jalandhar OR Patiala OR Mohali)', limit: 5 },
-  { name: 'Haryana', q: '"Haryana" (Gurugram OR Faridabad OR Ambala OR Hisar OR Rohtak)', limit: 4 },
-  { name: 'Assam', q: '"Assam" (Guwahati OR Dibrugarh OR Silchar OR Jorhat OR Tezpur)', limit: 5 },
-  { name: 'Chhattisgarh', q: '"Chhattisgarh" (Raipur OR Bilaspur OR Durg OR Bastar OR Korba)', limit: 4 },
-  { name: 'Jharkhand', q: '"Jharkhand" (Ranchi OR Jamshedpur OR Dhanbad OR Bokaro)', limit: 4 },
-  { name: 'Uttarakhand', q: '"Uttarakhand" (Dehradun OR Haridwar OR Nainital OR Haldwani)', limit: 4 },
-  { name: 'Himachal Pradesh', q: '"Himachal Pradesh" (Shimla OR Manali OR Dharamshala OR Kangra)', limit: 4 },
-  { name: 'Arunachal Pradesh', q: '"Arunachal Pradesh" (Itanagar OR Tawang OR Pasighat)', limit: 3 },
-  { name: 'Goa', q: '"Goa" (Panaji OR Margao OR Vasco)', limit: 3 },
-  { name: 'Manipur', q: '"Manipur" (Imphal OR Churachandpur)', limit: 3 },
-  { name: 'Meghalaya', q: '"Meghalaya" (Shillong OR Tura)', limit: 3 },
-  { name: 'Mizoram', q: '"Mizoram" (Aizawl OR Lunglei)', limit: 3 },
-  { name: 'Nagaland', q: '"Nagaland" (Kohima OR Dimapur)', limit: 3 },
-  { name: 'Sikkim', q: '"Sikkim" (Gangtok OR Namchi)', limit: 3 },
-  { name: 'Tripura', q: '"Tripura" (Agartala OR Udaipur)', limit: 3 }
+  { name: 'Uttar Pradesh', q: '"Uttar Pradesh" (Lucknow OR Varanasi OR Kanpur OR Agra OR Noida OR Prayagraj OR Gorakhpur)', limit: 5 },
+  { name: 'Bihar', q: '"Bihar" (Patna OR Gaya OR Muzaffarpur OR Bhagalpur OR Darbhanga)', limit: 4 },
+  { name: 'Gujarat', q: '"Gujarat" (Ahmedabad OR Surat OR Vadodara OR Rajkot OR Gandhinagar)', limit: 4 },
+  { name: 'Rajasthan', q: '"Rajasthan" (Jaipur OR Jodhpur OR Udaipur OR Kota OR Ajmer)', limit: 4 },
+  { name: 'Madhya Pradesh', q: '"Madhya Pradesh" (Bhopal OR Indore OR Gwalior OR Jabalpur OR Ujjain)', limit: 4 },
+  { name: 'Kerala', q: '"Kerala" (Thiruvananthapuram OR Kochi OR Kozhikode OR Thrissur OR Kannur)', limit: 4 },
+  { name: 'Punjab', q: '"Punjab" (Amritsar OR Ludhiana OR Jalandhar OR Patiala OR Mohali)', limit: 4 },
+  { name: 'Haryana', q: '"Haryana" (Gurugram OR Faridabad OR Ambala OR Hisar OR Rohtak)', limit: 3 },
+  { name: 'Assam', q: '"Assam" (Guwahati OR Dibrugarh OR Silchar OR Jorhat OR Tezpur)', limit: 4 },
+  { name: 'Chhattisgarh', q: '"Chhattisgarh" (Raipur OR Bilaspur OR Durg OR Bastar OR Korba)', limit: 3 },
+  { name: 'Jharkhand', q: '"Jharkhand" (Ranchi OR Jamshedpur OR Dhanbad OR Bokaro)', limit: 3 },
+  { name: 'Uttarakhand', q: '"Uttarakhand" (Dehradun OR Haridwar OR Nainital OR Haldwani)', limit: 3 },
+  { name: 'Himachal Pradesh', q: '"Himachal Pradesh" (Shimla OR Manali OR Dharamshala OR Kangra)', limit: 3 },
+  { name: 'Arunachal Pradesh', q: '"Arunachal Pradesh" (Itanagar OR Tawang OR Pasighat)', limit: 2 },
+  { name: 'Goa', q: '"Goa" (Panaji OR Margao OR Vasco)', limit: 2 },
+  { name: 'Manipur', q: '"Manipur" (Imphal OR Churachandpur)', limit: 2 },
+  { name: 'Meghalaya', q: '"Meghalaya" (Shillong OR Tura)', limit: 2 },
+  { name: 'Mizoram', q: '"Mizoram" (Aizawl OR Lunglei)', limit: 2 },
+  { name: 'Nagaland', q: '"Nagaland" (Kohima OR Dimapur)', limit: 2 },
+  { name: 'Sikkim', q: '"Sikkim" (Gangtok OR Namchi)', limit: 2 },
+  { name: 'Tripura', q: '"Tripura" (Agartala OR Udaipur)', limit: 2 }
 ];
 
 const CORE_FEEDS = [
@@ -231,33 +232,31 @@ function verifyCategorySemantically(requestedCategory, aiVerifiedCategory, title
   return true;
 }
 
-// Editorial 13-Language Generator with Retry Backoff:
-// Produces natural, idiomatic headlines & 45-50 word gists in English + all 12 major Indian regional languages
-async function generateEditorial13Lang({ title, rawText, source, suggestedCategory, stateName = '', isPodcast = false }) {
+// Editorial 8-Language Generator with Proper-Noun Transliteration & Retry Backoff
+async function generateEditorial8Lang({ title, rawText, source, suggestedCategory, stateName = '', isPodcast = false }) {
   const contextText = (rawText || '').slice(0, 1500);
 
-  const prompt = `You are the chief multilingual news editor for Pulse50. Read the story below and produce natural, journalistic, grammatically complete headlines and 45 to 50 word summaries in ALL 13 languages:
+  const prompt = `You are the chief multilingual news editor for Pulse50. Read the story below and write natural, journalistic, grammatically complete headlines and 45 to 50 word summaries in ALL 8 languages:
 - en (English)
 - hi (Hindi / हिंदी)
 - bn (Bengali / বাংলা)
 - mr (Marathi / मराठी)
 - te (Telugu / తెలుగు)
 - ta (Tamil / தமிழ்)
-- gu (Gujarati / ગુજરાતી)
-- ur (Urdu / اردو)
 - kn (Kannada / ಕನ್ನಡ)
 - or (Odia / ଓଡ଼ିଆ)
-- ml (Malayalam / മലയാളം)
-- pa (Punjabi / ਪੰਜਾਬੀ)
-- as (Assamese / অসমীয়া)
 
-CRITICAL EDITORIAL RULES:
-1. NEVER do word-for-word machine translation. Write natural, idiomatic, complete sentences as a senior native newspaper editor would write in each script.
-2. Format Indian currency and numbers naturally inside each language (e.g., "Rs. 2.30 crores" -> "₹2.30 crore" in English, "₹2.30 करोड़" in Hindi, "₹2.30 କୋଟି" in Odia — NEVER split currency symbols from digits).
-3. Transliterate or translate ALL English words cleanly into the target script — NEVER leave stray English words or suffixes inside regional language sentences.
-4. Each summary MUST be 44 to 50 words, end with a proper sentence terminator (. or ।), include concrete facts (who, what, where, district/impact), and NEVER repeat the headline verbatim or mention "${source}".
-5. ${isPodcast ? 'Categories MUST be ["Podcasts"].' : 'Classify from ONLY: ["India National", "World", "Politics", "Sports", "Entertainment", "Science & Education"].'}
-${stateName ? `6. Highlight the specific district and local impact in ${stateName}.` : ''}
+STRICT PROPER NOUN & EDITORIAL RULES:
+1. NEVER translate proper nouns, company names, film studios, sports leagues, brands, or personal names by dictionary meaning. Always transliterate them phonetically into the target script:
+   - Example: "Colour Yellow" -> "କଲର୍ ୟେଲୋ" in Odia / "कलर येलो" in Hindi (NEVER "ରଙ୍ଗ ହଳଦିଆ" or "रंग पीला").
+   - Example: "Mindtree" -> "ମାଇଣ୍ଡଟ୍ରୀ" in Odia / "माइंडट्री" in Hindi (NEVER "ମନ ଗଛ").
+   - Example: "Phantom Studios" -> "ଫାଣ୍ଟମ୍ ଷ୍ଟୁଡିଓଜ୍" in Odia.
+2. NEVER do literal word-for-word translation. Write smooth, natural sentences as a senior native newspaper editor would write in each script.
+3. Format currency and numbers cleanly inside each language (e.g., "Rs. 2.30 crores" -> "₹2.30 crore" in English, "₹2.30 करोड़" in Hindi, "₹2.30 କୋଟି" in Odia — NEVER split currency symbols from digits).
+4. NEVER leave stray ASCII English letters or broken vowel fragments inside Odia, Hindi, Bengali, Marathi, Telugu, Tamil, or Kannada sentences.
+5. Each summary MUST be 44 to 50 words, end with a proper sentence terminator (. or ।), include concrete facts (who, what, where, district/impact), and NEVER repeat the headline verbatim or mention "${source}".
+6. ${isPodcast ? 'Categories MUST be ["Podcasts"].' : 'Classify from ONLY: ["India National", "World", "Politics", "Sports", "Entertainment", "Science & Education"].'}
+${stateName ? `7. Highlight the specific district and local impact in ${stateName}.` : ''}
 
 Return ONLY valid JSON in this exact schema:
 {
@@ -269,13 +268,8 @@ Return ONLY valid JSON in this exact schema:
     "mr": { "title": "...", "summary": "..." },
     "te": { "title": "...", "summary": "..." },
     "ta": { "title": "...", "summary": "..." },
-    "gu": { "title": "...", "summary": "..." },
-    "ur": { "title": "...", "summary": "..." },
     "kn": { "title": "...", "summary": "..." },
-    "or": { "title": "...", "summary": "..." },
-    "ml": { "title": "...", "summary": "..." },
-    "pa": { "title": "...", "summary": "..." },
-    "as": { "title": "...", "summary": "..." }
+    "or": { "title": "...", "summary": "..." }
   }
 }
 
@@ -340,7 +334,7 @@ async function run() {
     allStories.push(story);
   };
 
-  console.log('1. Fetching Core Category Feeds (English Base + 13 Indian Languages)...');
+  console.log('1. Fetching Core Category Feeds (English Base + 8 High-Demand Indian Languages)...');
   for (const feed of CORE_FEEDS) {
     try {
       const parsed = await parser.parseURL(feed.url);
@@ -357,7 +351,7 @@ async function run() {
           if (scraped.text.length > bodyText.length) bodyText = scraped.text;
         }
 
-        const editorial = await generateEditorial13Lang({
+        const editorial = await generateEditorial8Lang({
           title: rawTitle,
           rawText: bodyText,
           source: feed.source,
@@ -389,14 +383,14 @@ async function run() {
           link: item.link || '',
           pubDate: item.isoDate || item.pubDate || new Date().toISOString()
         });
-        await sleep(1500);
+        await sleep(1400);
       }
     } catch (e) {
       console.warn(`Core feed error (${feed.source}):`, e.message);
     }
   }
 
-  console.log('2. Fetching All 28 Indian States (Uniform English Base + 13 Languages)...');
+  console.log('2. Fetching All 28 Indian States (Uniform English Base + 8 Languages)...');
   for (const st of STATE_QUERIES) {
     try {
       const stateUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(`${st.q} when:3d`)}&hl=en-IN&gl=IN&ceid=IN:en`;
@@ -410,7 +404,7 @@ async function run() {
         if (!rawTitle) continue;
 
         const snippet = cleanHtml(item.contentSnippet || item.description || rawTitle);
-        const editorial = await generateEditorial13Lang({
+        const editorial = await generateEditorial8Lang({
           title: rawTitle,
           rawText: snippet,
           source: sourceName,
@@ -434,14 +428,14 @@ async function run() {
           link: item.link || '',
           pubDate: item.isoDate || item.pubDate || new Date().toISOString()
         });
-        await sleep(1500);
+        await sleep(1400);
       }
     } catch (e) {
       console.warn(`State feed error (${st.name}):`, e.message);
     }
   }
 
-  console.log('3. Fetching Podcasts (English Base + 13 Languages)...');
+  console.log('3. Fetching Podcasts (English Base + 8 Languages)...');
   for (const pod of PODCAST_FEEDS) {
     try {
       const parsed = await parser.parseURL(pod.url);
@@ -455,7 +449,7 @@ async function run() {
         const thumb = videoId ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` : extractRssImage(item);
         const rawDesc = sanitizePodcastDescription(item.mediaGroup?.['media:description']?.[0] || item.contentSnippet || item.description || '');
 
-        const editorial = await generateEditorial13Lang({
+        const editorial = await generateEditorial8Lang({
           title: rawTitle,
           rawText: rawDesc || rawTitle,
           source: pod.source,
@@ -479,7 +473,7 @@ async function run() {
           link: link || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : ''),
           pubDate: item.isoDate || item.pubDate || new Date().toISOString()
         });
-        await sleep(1500);
+        await sleep(1400);
       }
     } catch (e) {
       console.warn(`Podcast error (${pod.source}):`, e.message);
