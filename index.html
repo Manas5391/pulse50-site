@@ -15,7 +15,7 @@
     html, body {
       margin: 0; padding: 0; height: 100%; overflow: hidden;
       background: #090d16; color: #f8fafc;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Oriya", "Noto Sans Telugu", "Noto Sans Devanagari", "Noto Sans Bengali", "Noto Sans Tamil", "Noto Sans Kannada", sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Devanagari", "Noto Sans Bengali", "Noto Sans Telugu", "Noto Sans Tamil", "Noto Sans Gujarati", "Noto Nastaliq Urdu", "Noto Sans Kannada", "Noto Sans Oriya", "Noto Sans Malayalam", "Noto Sans Gurmukhi", sans-serif;
     }
     .snap-feed {
       height: calc(100dvh - 152px);
@@ -36,7 +36,7 @@
 </head>
 <body class="flex flex-col select-none">
 
-  <!-- Top App Header with Global 7-Language Dropdown -->
+  <!-- Top App Header with 13-Language Dropdown -->
   <header class="h-14 px-3 flex items-center justify-between bg-slate-950 border-b border-slate-800/90 shrink-0 z-30 gap-1.5">
     <div class="flex items-center gap-2 min-w-0">
       <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-black text-white text-xs shadow-md shadow-indigo-950 shrink-0">P50</div>
@@ -50,15 +50,21 @@
     </div>
 
     <div class="flex items-center gap-1.5 shrink-0">
-      <!-- Global Language Selector (Applies Across All 9 Tabs) -->
+      <!-- Global Language Filter (13 Major Indian Languages — Applies Uniformly Across All 9 Tabs & 28 States) -->
       <select id="langSelect" onchange="changeAppLanguage(this.value)" aria-label="Select Language" class="h-8 px-2 rounded-lg bg-indigo-950/90 text-indigo-200 text-xs font-bold border border-indigo-500/50 focus:outline-none">
-        <option value="en">EN • English</option>
-        <option value="or">ଓଡ଼ିଆ • Odia</option>
+        <option value="en">English</option>
         <option value="hi">हिंदी • Hindi</option>
         <option value="bn">বাংলা • Bengali</option>
+        <option value="mr">मराठी • Marathi</option>
         <option value="te">తెలుగు • Telugu</option>
         <option value="ta">தமிழ் • Tamil</option>
+        <option value="gu">ગુજરાતી • Gujarati</option>
+        <option value="ur">اردو • Urdu</option>
         <option value="kn">ಕನ್ನಡ • Kannada</option>
+        <option value="or">ଓଡ଼ିଆ • Odia</option>
+        <option value="ml">മലയാളം • Malayalam</option>
+        <option value="pa">ਪੰਜਾਬੀ • Punjabi</option>
+        <option value="as">অসমীয়া • Assamese</option>
       </select>
 
       <button onclick="toggleSearchBar()" aria-label="Search News" class="w-8 h-8 rounded-lg bg-slate-800/90 hover:bg-slate-700 flex items-center justify-center text-xs border border-slate-700/70">🔍</button>
@@ -83,7 +89,7 @@
 
   <!-- Translation Progress Banner -->
   <div id="translatingBanner" class="hidden px-3 py-1 bg-indigo-950/95 border-b border-indigo-700/50 text-[11px] text-indigo-200 text-center font-medium shrink-0">
-    Translating feed into your selected language...
+    Translating stories into your selected language...
   </div>
 
   <!-- Main Vertical Snap Feed -->
@@ -132,8 +138,8 @@
 
   <script>
     const NEWS_JSON_CDN = "https://raw.githubusercontent.com/Manas5391/pulse50-site/main/news.json";
-    const CACHE_KEY = "pulse50_stories_v10";
-    const TRANS_CACHE_KEY = "pulse50_trans_v2";
+    const CACHE_KEY = "pulse50_stories_v11";
+    const TRANS_CACHE_KEY = "pulse50_trans_v3";
 
     const CATEGORIES = [
       "General",
@@ -148,32 +154,13 @@
     ];
 
     const INDIAN_STATES_28 = [
-      "Odisha", "Telangana", "Andhra Pradesh", "West Bengal", "Tamil Nadu",
-      "Karnataka", "Maharashtra", "Kerala", "Gujarat", "Punjab",
-      "Uttar Pradesh", "Bihar", "Madhya Pradesh", "Rajasthan", "Haryana",
-      "Chhattisgarh", "Jharkhand", "Uttarakhand", "Himachal Pradesh", "Assam",
+      "Odisha", "Telangana", "Andhra Pradesh", "Maharashtra", "Karnataka",
+      "Tamil Nadu", "West Bengal", "Uttar Pradesh", "Bihar", "Gujarat",
+      "Rajasthan", "Madhya Pradesh", "Kerala", "Punjab", "Haryana",
+      "Assam", "Chhattisgarh", "Jharkhand", "Uttarakhand", "Himachal Pradesh",
       "Arunachal Pradesh", "Goa", "Manipur", "Meghalaya", "Mizoram",
       "Nagaland", "Sikkim", "Tripura"
     ];
-
-    const STATE_DEFAULT_LANG = {
-      "Odisha": "or",
-      "Telangana": "te",
-      "Andhra Pradesh": "te",
-      "West Bengal": "bn",
-      "Tripura": "bn",
-      "Tamil Nadu": "ta",
-      "Karnataka": "kn",
-      "Uttar Pradesh": "hi",
-      "Bihar": "hi",
-      "Madhya Pradesh": "hi",
-      "Rajasthan": "hi",
-      "Haryana": "hi",
-      "Chhattisgarh": "hi",
-      "Jharkhand": "hi",
-      "Uttarakhand": "hi",
-      "Himachal Pradesh": "hi"
-    };
 
     let activeCategory = "General";
     let selectedState = localStorage.getItem("pulse50_state") || "Odisha";
@@ -215,14 +202,17 @@
         </div>`;
     }
 
-    // Fallback translation only if an older item lacks pre-written editorial translations
-    async function translateText(text, targetLang) {
-      if (!text || !targetLang) return text;
+    // Sentence-aware backup translator (only used if a story lacks pre-generated Gemini editorial text)
+    async function translateSentenceBlock(text, targetLang) {
+      if (!text || targetLang === "en") return text;
       const cacheKey = `${targetLang}:${text.slice(0, 80)}:${text.length}`;
       if (translationCache[cacheKey]) return translationCache[cacheKey];
 
+      // Normalize currency like "Rs. 2.30 crores" to "INR 2.30 crore" so numbers never split mid-sentence
+      const normalized = text.replace(/\bRs\.?\s*(\d+(?:\.\d+)?)\s*(crores?|lakhs?)/gi, "₹$1 $2");
+
       try {
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(targetLang)}&dt=t&q=${encodeURIComponent(text)}`;
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${encodeURIComponent(targetLang)}&dt=t&q=${encodeURIComponent(normalized)}`;
         const res = await fetch(url);
         if (!res.ok) return text;
         const data = await res.json();
@@ -231,7 +221,7 @@
           translationCache[cacheKey] = translated.trim();
           try {
             const keys = Object.keys(translationCache);
-            if (keys.length > 500) delete translationCache[keys[0]];
+            if (keys.length > 600) delete translationCache[keys[0]];
             localStorage.setItem(TRANS_CACHE_KEY, JSON.stringify(translationCache));
           } catch {}
           return translated.trim();
@@ -240,22 +230,22 @@
       return text;
     }
 
-    async function translateVisibleStories(stories, targetLang) {
+    async function ensureLanguageReadyForVisible(stories, targetLang) {
+      if (targetLang === "en") return;
       const banner = document.getElementById("translatingBanner");
-      const toTranslate = stories.slice(0, 18).filter(item => {
-        if (item.translations && item.translations[targetLang]?.title && item.translations[targetLang]?.summary) return false;
-        if ((item.nativeLang || "en") === targetLang) return false;
+      const missing = stories.slice(0, 20).filter(item => {
+        if (item.translations?.[targetLang]?.title && item.translations?.[targetLang]?.summary) return false;
         const kTitle = `${targetLang}:${item.title.slice(0, 80)}:${item.title.length}`;
         return !translationCache[kTitle];
       });
 
-      if (!toTranslate.length) return;
+      if (!missing.length) return;
       banner.classList.remove("hidden");
 
-      await Promise.all(toTranslate.map(async (item) => {
+      await Promise.all(missing.map(async (item) => {
         await Promise.all([
-          translateText(item.title, targetLang),
-          translateText(item.summary, targetLang)
+          translateSentenceBlock(item.title, targetLang),
+          translateSentenceBlock(item.summary, targetLang)
         ]);
       }));
 
@@ -264,29 +254,27 @@
     }
 
     function getLocalizedField(item, field) {
-      if (item.translations && item.translations[selectedLang] && item.translations[selectedLang][field]) {
+      if (selectedLang === "en") {
+        return item.translations?.en?.[field] || item[field] || "";
+      }
+      if (item.translations?.[selectedLang]?.[field]) {
         return item.translations[selectedLang][field];
       }
       const raw = item[field] || "";
-      if ((item.nativeLang || "en") === selectedLang) return raw;
       const cacheKey = `${selectedLang}:${raw.slice(0, 80)}:${raw.length}`;
       return translationCache[cacheKey] || raw;
     }
 
-    async function changeAppLanguage(newLang) {
+    function changeAppLanguage(newLang) {
       selectedLang = newLang;
       localStorage.setItem("pulse50_lang", newLang);
       renderFeed();
     }
 
-    async function changeIndianState(newState) {
+    // Selecting a state NEVER overrides the user's chosen language filter
+    function changeIndianState(newState) {
       selectedState = newState;
       localStorage.setItem("pulse50_state", newState);
-      if (STATE_DEFAULT_LANG[newState]) {
-        selectedLang = STATE_DEFAULT_LANG[newState];
-        localStorage.setItem("pulse50_lang", selectedLang);
-        document.getElementById("langSelect").value = selectedLang;
-      }
       renderCategories();
       renderFeed();
     }
@@ -428,7 +416,7 @@
       }
 
       if (!skipTranslationTrigger && filtered.length) {
-        translateVisibleStories(filtered, selectedLang);
+        ensureLanguageReadyForVisible(filtered, selectedLang);
       }
 
       const stateBarHtml = activeCategory === "State" && !searchQuery ? `
@@ -447,6 +435,8 @@
           </div>`;
         return;
       }
+
+      const isRtl = selectedLang === "ur";
 
       feed.innerHTML = stateBarHtml + filtered.slice(0, 80).map((item, idx) => {
         const isPodcast = item.category === "Podcasts";
@@ -477,16 +467,16 @@
               ` : buildVibrantSourceBanner(item.source, safeCat, idx)}
             </div>
 
-            <div class="flex-1 px-4 py-3.5 flex flex-col justify-between overflow-hidden">
+            <div class="flex-1 px-4 py-3.5 flex flex-col justify-between overflow-hidden" dir="${isRtl ? "rtl" : "ltr"}">
               <div>
-                <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5" dir="ltr">
                   <span class="font-semibold text-indigo-400 truncate">${item.source} • ${timeAgo(item.pubDate)}</span>
                 </div>
                 <h2 class="text-[17px] sm:text-lg font-extrabold leading-snug mb-2 text-white line-clamp-3">${displayTitle}</h2>
                 <p class="text-[14.5px] leading-relaxed text-slate-300">${displaySummary}</p>
               </div>
 
-              <div class="pt-2 flex items-center gap-2 shrink-0">
+              <div class="pt-2 flex items-center gap-2 shrink-0" dir="ltr">
                 ${hasVideo ? `
                   <button onclick='openVideo(${JSON.stringify({ source: item.source, title: displayTitle, video: item.video, link: safeLink }).replace(/'/g, "&#39;")})' class="py-2.5 px-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow">
                     <span>▶ Watch</span>
