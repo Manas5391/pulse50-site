@@ -1,486 +1,536 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Pulse50 News — India &amp; World News Under 50 Words</title>
-  <meta name="description" content="Live daily trending news from India (National & State-wise), Politics, Sports, Entertainment, World, and Podcasts strictly in 50 words." />
   <meta name="theme-color" content="#090d16" />
+  <title>Pulse50 — India & World News in 50 Words</title>
   <link rel="manifest" href="/manifest.json" />
   <link rel="icon" type="image/png" href="/icon-192.png" />
+  <!-- Google AdSense Verification Tag (Preserved Untouched) -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8456169895588415" crossorigin="anonymous"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
-      margin: 0;
-      padding: 0;
-      height: 100dvh;
-      overflow: hidden;
-      background-color: #090d16;
-      color: #f8fafc;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      margin: 0; padding: 0; height: 100%; overflow: hidden;
+      background: #090d16; color: #f8fafc;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Oriya", "Noto Sans Telugu", "Noto Sans Devanagari", "Noto Sans Bengali", "Noto Sans Tamil", "Noto Sans Kannada", sans-serif;
     }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    #feedContainer {
-      scroll-snap-type: y mandatory;
+    .snap-feed {
+      height: calc(100dvh - 152px);
       overflow-y: scroll;
-      height: 100%;
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
     }
+    .snap-feed::-webkit-scrollbar { display: none; }
     .news-card {
+      height: calc(100dvh - 152px);
       scroll-snap-align: start;
       scroll-snap-stop: always;
-      height: 100%;
-      width: 100%;
     }
+    .cat-bar { scrollbar-width: none; }
+    .cat-bar::-webkit-scrollbar { display: none; }
   </style>
 </head>
-<body class="flex flex-col h-[100dvh] bg-[#090d16] text-slate-100 select-none">
+<body class="flex flex-col select-none">
 
-  <!-- Top Header -->
-  <header class="shrink-0 bg-[#0d1322] border-b border-slate-800/80 px-3.5 py-2.5 flex items-center justify-between z-30">
-    <div class="flex items-center gap-2.5">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center font-extrabold text-white text-sm shadow-md">
-        P50
-      </div>
-      <div>
+  <!-- Top App Header with Global 7-Language Dropdown -->
+  <header class="h-14 px-3 flex items-center justify-between bg-slate-950 border-b border-slate-800/90 shrink-0 z-30 gap-1.5">
+    <div class="flex items-center gap-2 min-w-0">
+      <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-black text-white text-xs shadow-md shadow-indigo-950 shrink-0">P50</div>
+      <div class="truncate">
         <div class="flex items-center gap-1.5">
-          <h1 class="text-[15px] font-bold tracking-tight text-white leading-none">Pulse50 News</h1>
-          <span id="liveDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <h1 id="appTitle" class="text-sm font-bold leading-tight text-white truncate">Pulse50</h1>
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
         </div>
-        <p id="statusSubtitle" class="text-[11px] text-slate-400 mt-0.5 leading-none">50-Word AI Desk • Live</p>
+        <p id="syncStatus" class="text-[10px] text-slate-400 truncate">50-Word Live Desk</p>
       </div>
     </div>
 
-    <div class="flex items-center gap-2">
-      <button onclick="toggleSearchModal()" aria-label="Search" class="w-9 h-9 rounded-full bg-slate-800/90 hover:bg-slate-700 flex items-center justify-center text-slate-200 text-sm">
-        🔍
+    <div class="flex items-center gap-1.5 shrink-0">
+      <!-- Global Language Selector (Applies Across All 9 Tabs) -->
+      <select id="langSelect" onchange="changeAppLanguage(this.value)" aria-label="Select Language" class="h-8 px-2 rounded-lg bg-indigo-950/90 text-indigo-200 text-xs font-bold border border-indigo-500/50 focus:outline-none">
+        <option value="en">EN • English</option>
+        <option value="or">ଓଡ଼ିଆ • Odia</option>
+        <option value="hi">हिंदी • Hindi</option>
+        <option value="bn">বাংলা • Bengali</option>
+        <option value="te">తెలుగు • Telugu</option>
+        <option value="ta">தமிழ் • Tamil</option>
+        <option value="kn">ಕನ್ನಡ • Kannada</option>
+      </select>
+
+      <button onclick="toggleSearchBar()" aria-label="Search News" class="w-8 h-8 rounded-lg bg-slate-800/90 hover:bg-slate-700 flex items-center justify-center text-xs border border-slate-700/70">🔍</button>
+      <button onclick="openNotificationsModal()" aria-label="Trending Alerts" class="relative w-8 h-8 rounded-lg bg-slate-800/90 hover:bg-slate-700 flex items-center justify-center text-xs border border-slate-700/70">
+        <span>🔔</span>
+        <span id="alertDot" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500"></span>
       </button>
-      <button onclick="toggleAlertsModal()" aria-label="Trending Alerts" class="relative w-9 h-9 rounded-full bg-slate-800/90 hover:bg-slate-700 flex items-center justify-center text-slate-200 text-sm">
-        🔔
-        <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400"></span>
-      </button>
-      <button onclick="manualRefresh()" class="px-3 py-1.5 rounded-full bg-emerald-950/90 border border-emerald-600/40 text-emerald-300 text-xs font-semibold flex items-center gap-1 active:scale-95">
-        ↻ Live
+      <button onclick="fetchLiveNews('manual')" class="px-2 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 text-xs font-semibold border border-emerald-700/50 flex items-center gap-1">
+        <span id="refreshIcon">↻</span>
       </button>
     </div>
   </header>
 
-  <!-- Category Tabs -->
-  <nav id="categoryBar" class="shrink-0 bg-[#0b101d] border-b border-slate-800/70 px-3 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar z-20"></nav>
+  <!-- 9 Locked Category Tabs -->
+  <nav id="categoryBar" class="h-12 px-3 flex items-center gap-2 overflow-x-auto cat-bar bg-slate-900/95 border-b border-slate-800 shrink-0 z-20"></nav>
 
-  <!-- State Selector Bar (Shown only on India States tab) -->
-  <div id="stateBar" class="hidden shrink-0 bg-[#0f1629] border-b border-slate-800 px-3.5 py-1.5 flex items-center justify-between gap-2 z-20">
-    <label for="stateSelect" class="text-xs font-medium text-slate-300">Select State:</label>
-    <select id="stateSelect" onchange="changeState(this.value)" class="bg-slate-800 text-white text-xs font-medium rounded-lg px-3 py-1.5 border border-slate-700 focus:outline-none focus:border-indigo-500 min-w-[170px]"></select>
+  <!-- Expandable Keyword Search Bar -->
+  <div id="searchBarContainer" class="hidden px-3 py-2 bg-slate-900 border-b border-slate-800 flex items-center gap-2 shrink-0 z-20">
+    <input id="searchInput" type="search" oninput="handleSearchInput(this.value)" placeholder="Search headlines, districts, states, or topics..." class="flex-1 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500" />
+    <button onclick="clearSearch()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold">Clear</button>
   </div>
 
-  <!-- Floating New Feeds Available Pill -->
-  <button id="newFeedsPill" onclick="applyPendingStories()" class="hidden fixed top-[106px] left-1/2 -translate-x-1/2 z-40 px-4 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-950/80 border border-indigo-400/40 transition-all">
-    ↑ New Feeds Available
-  </button>
+  <!-- Translation Progress Banner -->
+  <div id="translatingBanner" class="hidden px-3 py-1 bg-indigo-950/95 border-b border-indigo-700/50 text-[11px] text-indigo-200 text-center font-medium shrink-0">
+    Translating feed into your selected language...
+  </div>
 
   <!-- Main Vertical Snap Feed -->
-  <main class="relative flex-1 overflow-hidden">
-    <div id="feedContainer" class="no-scrollbar"></div>
-  </main>
+  <main id="feedContainer" class="snap-feed relative"></main>
 
-  <!-- Footer -->
-  <footer id="adFooter" class="shrink-0 bg-[#0b101d] border-t border-slate-800/80 px-3.5 py-2 flex items-center justify-between text-[11px] text-slate-400 z-30">
-    <span>© 2026 Pulse50 News</span>
+  <!-- AdSense-Safe Policy & Navigation Footer -->
+  <footer id="adFooter" class="h-12 px-3.5 bg-slate-950 border-t border-slate-800/90 flex items-center justify-between text-[11px] text-slate-400 shrink-0 z-20">
+    <span class="font-semibold text-slate-300">© 2026 Pulse50 News</span>
     <div class="flex items-center gap-3">
-      <a href="/about.html" class="hover:text-white">About</a>
-      <a href="/contact.html" class="hover:text-white">Contact</a>
-      <a href="/privacy-policy.html" class="hover:text-white">Privacy</a>
-      <a href="/terms.html" class="hover:text-white">Terms</a>
+      <a href="/about.html" class="hover:text-indigo-400 transition">About</a>
+      <a href="/contact.html" class="hover:text-indigo-400 transition">Contact</a>
+      <a href="/privacy-policy.html" class="hover:text-indigo-400 transition">Privacy</a>
+      <a href="/terms.html" class="hover:text-indigo-400 transition">Terms</a>
     </div>
   </footer>
 
-  <!-- Search Modal -->
-  <div id="searchModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col p-4">
-    <div class="bg-[#111827] border border-slate-700 rounded-2xl p-4 max-w-lg w-full mx-auto mt-6">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-sm font-bold text-white">Search 50-Word Briefs</h2>
-        <button onclick="toggleSearchModal()" class="text-slate-400 hover:text-white text-sm px-2">✕</button>
+  <!-- Trending Alerts Modal -->
+  <div id="notificationsModal" class="fixed inset-0 bg-black/85 z-50 hidden items-end sm:items-center justify-center p-3">
+    <div class="max-w-md w-full bg-slate-900 rounded-2xl border border-slate-700 overflow-hidden max-h-[82dvh] flex flex-col">
+      <div class="p-3.5 border-b border-slate-800 flex items-center justify-between">
+        <div>
+          <h2 class="font-bold text-sm text-white">Trending India & World Alerts</h2>
+          <p class="text-[11px] text-slate-400">Tap any alert to jump directly to the story</p>
+        </div>
+        <button onclick="closeNotificationsModal()" class="px-2.5 py-1 rounded-lg bg-slate-800 text-xs font-bold">✕</button>
       </div>
-      <input id="searchInput" type="text" oninput="handleSearch(this.value)" placeholder="Search headlines, states, topics..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" />
-      <div id="searchResults" class="mt-3 max-h-[60vh] overflow-y-auto space-y-2"></div>
+      <div id="alertsList" class="p-3 space-y-2 overflow-y-auto flex-1"></div>
     </div>
   </div>
 
-  <!-- Trending Alerts Modal -->
-  <div id="alertsModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col p-4">
-    <div class="bg-[#111827] border border-slate-700 rounded-2xl p-4 max-w-lg w-full mx-auto mt-6">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-sm font-bold text-white">Top Breaking Alerts</h2>
-        <button onclick="toggleAlertsModal()" class="text-slate-400 hover:text-white text-sm px-2">✕</button>
+  <!-- Video Player Modal -->
+  <div id="videoModal" class="fixed inset-0 bg-black/95 z-50 hidden flex-col justify-center p-4">
+    <div class="max-w-xl w-full mx-auto bg-slate-900 rounded-2xl overflow-hidden border border-slate-700">
+      <div class="p-3 flex items-center justify-between border-b border-slate-800">
+        <span id="modalSource" class="text-xs font-bold text-indigo-400 uppercase">Video Coverage</span>
+        <button onclick="closeVideo()" class="px-3 py-1 rounded bg-slate-800 text-xs font-bold">Close ✕</button>
       </div>
-      <div id="alertsList" class="max-h-[65vh] overflow-y-auto space-y-2.5"></div>
+      <div class="aspect-video bg-black">
+        <iframe id="videoFrame" class="w-full h-full" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      </div>
+      <div class="p-3.5">
+        <h3 id="modalTitle" class="font-bold text-sm text-white"></h3>
+      </div>
     </div>
   </div>
 
   <script>
-    const NEWS_FEED_URL = "https://raw.githubusercontent.com/Manas5391/pulse50-site/main/news.json";
-    const CACHE_KEY = "pulse50_stories_v10";
-    const MAX_FEED_WINDOW = 600;
+    const NEWS_JSON_CDN = "https://raw.githubusercontent.com/Manas5391/pulse50-site/main/news.json";
+    const CACHE_KEY = "pulse50_stories_v9";
+    const TRANS_CACHE_KEY = "pulse50_trans_v1";
 
     const CATEGORIES = [
       "General",
       "India National",
       "World",
-      "India States",
-      "Politics",
+      "State",
       "Sports",
+      "Politics",
+      "Science & Education",
       "Entertainment",
       "Podcasts"
     ];
 
-    const ALL_STATES = [
-      "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-      "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
-      "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
-      "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
-      "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+    const INDIAN_STATES_28 = [
+      "Odisha", "Telangana", "Andhra Pradesh", "West Bengal", "Tamil Nadu",
+      "Karnataka", "Maharashtra", "Kerala", "Gujarat", "Punjab",
+      "Uttar Pradesh", "Bihar", "Madhya Pradesh", "Rajasthan", "Haryana",
+      "Chhattisgarh", "Jharkhand", "Uttarakhand", "Himachal Pradesh", "Assam",
+      "Arunachal Pradesh", "Goa", "Manipur", "Meghalaya", "Mizoram",
+      "Nagaland", "Sikkim", "Tripura"
     ];
 
-    let allStories = [];
-    let pendingStories = [];
+    const STATE_DEFAULT_LANG = {
+      "Odisha": "or",
+      "Telangana": "te",
+      "Andhra Pradesh": "te",
+      "West Bengal": "bn",
+      "Tripura": "bn",
+      "Tamil Nadu": "ta",
+      "Karnataka": "kn",
+      "Uttar Pradesh": "hi",
+      "Bihar": "hi",
+      "Madhya Pradesh": "hi",
+      "Rajasthan": "hi",
+      "Haryana": "hi",
+      "Chhattisgarh": "hi",
+      "Jharkhand": "hi",
+      "Uttarakhand": "hi",
+      "Himachal Pradesh": "hi"
+    };
+
     let activeCategory = "General";
-    let selectedState = "Telangana";
+    let selectedState = localStorage.getItem("pulse50_state") || "Odisha";
+    let selectedLang = localStorage.getItem("pulse50_lang") || "en";
+    let searchQuery = "";
+    let pinnedAlertStoryId = null;
 
-    function escapeHtml(str = "") {
-      return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
-
-    function timeAgo(dateStr) {
-      if (!dateStr) return "Today";
-      const parsed = Date.parse(dateStr);
-      if (isNaN(parsed)) return "Today";
-      const diffSec = Math.max(1, Math.floor((Date.now() - parsed) / 1000));
-      if (diffSec < 60) return "Just now";
-      const mins = Math.floor(diffSec / 60);
-      if (mins < 60) return `${mins}m ago`;
-      const hrs = Math.floor(mins / 60);
-      if (hrs < 24) return `${hrs}h ago`;
-      const days = Math.floor(hrs / 24);
-      return `${days}d ago`;
-    }
-
-    function buildVibrantSourceBanner(source = "Pulse50", category = "News", idx = 0) {
-      const gradients = [
-        "from-rose-600 via-pink-700 to-slate-900",
-        "from-indigo-600 via-blue-700 to-slate-900",
-        "from-emerald-600 via-teal-700 to-slate-900",
-        "from-amber-600 via-orange-700 to-slate-900",
-        "from-violet-600 via-purple-700 to-slate-900"
-      ];
-      const grad = gradients[idx % gradients.length];
-      const cleanSource = escapeHtml(source || "Pulse50");
-      const cleanCat = escapeHtml((category || "NEWS").toUpperCase());
-      return `
-        <div class="w-full h-full bg-gradient-to-br ${grad} flex flex-col items-center justify-center p-4 text-center">
-          <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center font-extrabold text-white text-base shadow-lg mb-2">
-            P50
-          </div>
-          <div class="text-xs font-extrabold tracking-wider text-white uppercase">${cleanCat}</div>
-          <div class="text-[11px] text-white/80 mt-0.5">${cleanSource}</div>
-        </div>
-      `;
-    }
-
-    function renderCategories() {
-      const bar = document.getElementById("categoryBar");
-      bar.innerHTML = CATEGORIES.map((cat) => {
-        const isActive = cat === activeCategory;
-        const label = cat === "India States" ? `States: ${selectedState}` : cat;
-        const cls = isActive
-          ? "bg-indigo-600 text-white shadow-sm"
-          : "bg-slate-800/80 text-slate-300 hover:bg-slate-700";
-        return `<button onclick="selectCategory('${cat}')" class="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${cls}">${escapeHtml(label)}</button>`;
-      }).join("");
-
-      const stateBar = document.getElementById("stateBar");
-      if (activeCategory === "India States") {
-        stateBar.classList.remove("hidden");
-      } else {
-        stateBar.classList.add("hidden");
+    function safeLoadJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch {
+        return fallback;
       }
     }
 
-    function populateStatesDropdown() {
-      const sel = document.getElementById("stateSelect");
-      sel.innerHTML = ALL_STATES.map((st) =>
-        `<option value="${escapeHtml(st)}" ${st === selectedState ? "selected" : ""}>${escapeHtml(st)}</option>`
-      ).join("");
+    let liveNewsItems = safeLoadJSON(CACHE_KEY, []);
+    let translationCache = safeLoadJSON(TRANS_CACHE_KEY, {});
+    let currentTrendingAlerts = [];
+
+    document.getElementById("langSelect").value = selectedLang;
+
+    function buildVibrantSourceBanner(sourceName, topicLabel, seedIdx = 0) {
+      const gradients = [
+        "from-indigo-600 via-purple-600 to-pink-500",
+        "from-emerald-500 via-teal-600 to-cyan-600",
+        "from-amber-500 via-orange-600 to-rose-600",
+        "from-sky-500 via-blue-600 to-indigo-700",
+        "from-fuchsia-600 via-purple-600 to-indigo-600"
+      ];
+      const grad = gradients[Math.abs(seedIdx + (sourceName || "").length) % gradients.length];
+      const cleanSource = (sourceName || "Pulse50 Desk").trim();
+      const initials = cleanSource.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("") || "P50";
+      return `
+        <div class="w-full h-full bg-gradient-to-br ${grad} flex flex-col items-center justify-center p-4 text-center relative overflow-hidden">
+          <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md border border-white/40 shadow-lg flex items-center justify-center text-white font-black text-sm tracking-wider mb-1.5">${initials}</div>
+          <span class="text-white font-extrabold text-sm tracking-wide drop-shadow">${cleanSource}</span>
+          <span class="mt-1 px-2.5 py-0.5 rounded-full bg-black/25 text-white/95 text-[10px] font-semibold uppercase tracking-widest">${topicLabel || "Verified Report"}</span>
+        </div>`;
+    }
+
+    // Free on-device translation with localStorage caching so ALL 9 tabs render in the chosen language
+    async function translateText(text, targetLang) {
+      if (!text || !targetLang) return text;
+      const cacheKey = `${targetLang}:${text.slice(0, 80)}:${text.length}`;
+      if (translationCache[cacheKey]) return translationCache[cacheKey];
+
+      try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(targetLang)}&dt=t&q=${encodeURIComponent(text)}`;
+        const res = await fetch(url);
+        if (!res.ok) return text;
+        const data = await res.json();
+        const translated = Array.isArray(data?.[0]) ? data[0].map(seg => seg[0] || "").join("") : text;
+        if (translated && translated.trim()) {
+          translationCache[cacheKey] = translated.trim();
+          try {
+            const keys = Object.keys(translationCache);
+            if (keys.length > 500) delete translationCache[keys[0]];
+            localStorage.setItem(TRANS_CACHE_KEY, JSON.stringify(translationCache));
+          } catch {}
+          return translated.trim();
+        }
+      } catch {}
+      return text;
+    }
+
+    async function translateVisibleStories(stories, targetLang) {
+      const banner = document.getElementById("translatingBanner");
+      const toTranslate = stories.slice(0, 18).filter(item => {
+        if ((item.nativeLang || "en") === targetLang) return false;
+        const kTitle = `${targetLang}:${item.title.slice(0, 80)}:${item.title.length}`;
+        return !translationCache[kTitle];
+      });
+
+      if (!toTranslate.length) return;
+      banner.classList.remove("hidden");
+
+      await Promise.all(toTranslate.map(async (item) => {
+        await Promise.all([
+          translateText(item.title, targetLang),
+          translateText(item.summary, targetLang)
+        ]);
+      }));
+
+      banner.classList.add("hidden");
+      renderFeed(true);
+    }
+
+    function getLocalizedField(item, field) {
+      const raw = item[field] || "";
+      if ((item.nativeLang || "en") === selectedLang) return raw;
+      const cacheKey = `${selectedLang}:${raw.slice(0, 80)}:${raw.length}`;
+      return translationCache[cacheKey] || raw;
+    }
+
+    async function changeAppLanguage(newLang) {
+      selectedLang = newLang;
+      localStorage.setItem("pulse50_lang", newLang);
+      renderFeed();
+    }
+
+    async function changeIndianState(newState) {
+      selectedState = newState;
+      localStorage.setItem("pulse50_state", newState);
+      if (STATE_DEFAULT_LANG[newState]) {
+        selectedLang = STATE_DEFAULT_LANG[newState];
+        localStorage.setItem("pulse50_lang", selectedLang);
+        document.getElementById("langSelect").value = selectedLang;
+      }
+      renderCategories();
+      renderFeed();
+    }
+
+    async function fetchLiveNews(mode = "initial") {
+      const icon = document.getElementById("refreshIcon");
+      if (icon && mode !== "silent") icon.classList.add("animate-spin");
+
+      try {
+        const res = await fetch(`${NEWS_JSON_CDN}?_cb=${Math.floor(Date.now() / 60000)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            liveNewsItems = data;
+            try { localStorage.setItem(CACHE_KEY, JSON.stringify(liveNewsItems)); } catch {}
+            localStorage.setItem("pulse50_last_sync", Date.now().toString());
+            updateAlerts(liveNewsItems);
+            renderFeed();
+          }
+        }
+      } finally {
+        if (icon) icon.classList.remove("animate-spin");
+        updateHeaderStatus();
+      }
+    }
+
+    function updateHeaderStatus() {
+      const lastSync = Number(localStorage.getItem("pulse50_last_sync") || 0);
+      const timeStr = lastSync ? new Date(lastSync).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Live";
+      document.getElementById("syncStatus").textContent = `50-Word Desk • ${timeStr}`;
+    }
+
+    function timeAgo(timestamp) {
+      if (!timestamp) return "Just now";
+      const mins = Math.max(1, Math.floor((Date.now() - new Date(timestamp).getTime()) / 60000));
+      if (mins < 60) return `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      return hrs < 24 ? `${hrs}h ago` : `${Math.floor(hrs / 24)}d ago`;
+    }
+
+    function renderCategories() {
+      document.getElementById("categoryBar").innerHTML = CATEGORIES.map(cat => `
+        <button onclick="selectCategory('${cat}')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+          activeCategory === cat ? "bg-indigo-600 text-white shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+        }">${cat === "State" ? `State: ${selectedState}` : cat}</button>
+      `).join("");
     }
 
     function selectCategory(cat) {
       activeCategory = cat;
+      pinnedAlertStoryId = null;
       renderCategories();
-      renderFeed(true);
+      renderFeed();
+      document.getElementById("feedContainer").scrollTop = 0;
     }
 
-    function changeState(st) {
-      selectedState = st;
-      renderCategories();
-      renderFeed(true);
+    function updateAlerts(stories) {
+      currentTrendingAlerts = stories
+        .filter(s => Array.isArray(s.tags) && (s.tags.includes("World") || s.tags.includes("India National")))
+        .slice(0, 15);
+      if (currentTrendingAlerts.length) document.getElementById("alertDot").classList.remove("hidden");
     }
 
-    // Interleaves stories across diverse topics so General never shows one category block after another
-    function buildBlendedGeneralFeed(stories) {
-      const candidates = stories
-        .filter((s) => s.category !== "Podcasts")
-        .sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
-
-      const buckets = {};
-      for (const s of candidates) {
-        const key = s.primaryCategory || s.category || "General";
-        if (!buckets[key]) buckets[key] = [];
-        buckets[key].push(s);
-      }
-
-      const keys = Object.keys(buckets);
-      const blended = [];
-      let added = true;
-      while (added) {
-        added = false;
-        for (const k of keys) {
-          if (buckets[k].length > 0) {
-            blended.push(buckets[k].shift());
-            added = true;
-          }
-        }
-      }
-      return blended;
-    }
-
-    function getFilteredStories() {
-      if (activeCategory === "General") {
-        return buildBlendedGeneralFeed(allStories);
-      }
-      if (activeCategory === "India States") {
-        return allStories
-          .filter((s) =>
-            (Array.isArray(s.stateTags) && s.stateTags.includes(selectedState)) ||
-            (s.category === "India States" && (s.title || "").toLowerCase().includes(selectedState.toLowerCase()))
-          )
-          .sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
-      }
-      return allStories
-        .filter((s) => s.category === activeCategory || (Array.isArray(s.tags) && s.tags.includes(activeCategory)))
-        .sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
-    }
-
-    function renderFeed(resetScroll = false) {
-      const container = document.getElementById("feedContainer");
-      const items = getFilteredStories();
-
-      if (!items.length) {
-        const msg = activeCategory === "India States"
-          ? `Syncing verified AI briefs for ${escapeHtml(selectedState)}...`
-          : `Fetching latest ${escapeHtml(activeCategory)} stories...`;
-        container.innerHTML = `
-          <div class="h-full w-full flex flex-col items-center justify-center px-6 text-center">
-            <p class="text-sm text-slate-400 mb-4">${msg}</p>
-            <button onclick="manualRefresh()" class="px-5 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md">
-              ↻ Sync Latest Feed
-            </button>
+    function openNotificationsModal() {
+      const list = document.getElementById("alertsList");
+      if (!currentTrendingAlerts.length) updateAlerts(liveNewsItems);
+      list.innerHTML = currentTrendingAlerts.map((item, idx) => `
+        <button onclick="openAlertByIndex(${idx})" class="w-full text-left p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 transition">
+          <div class="flex items-center justify-between text-[10px] text-indigo-400 font-semibold mb-1">
+            <span>${item.source}</span>
+            <span>${timeAgo(item.pubDate)}</span>
           </div>
-        `;
+          <p class="text-xs font-bold text-white line-clamp-2">${getLocalizedField(item, "title")}</p>
+        </button>
+      `).join("") || `<p class="text-xs text-slate-400 text-center py-6">No alerts right now.</p>`;
+      document.getElementById("notificationsModal").classList.remove("hidden");
+      document.getElementById("notificationsModal").classList.add("flex");
+    }
+
+    function closeNotificationsModal() {
+      document.getElementById("notificationsModal").classList.add("hidden");
+      document.getElementById("notificationsModal").classList.remove("flex");
+    }
+
+    function openAlertByIndex(idx) {
+      const story = currentTrendingAlerts[idx];
+      closeNotificationsModal();
+      if (!story) return;
+      pinnedAlertStoryId = story.id;
+      activeCategory = "General";
+      searchQuery = "";
+      document.getElementById("searchBarContainer").classList.add("hidden");
+      renderCategories();
+      renderFeed();
+      document.getElementById("feedContainer").scrollTop = 0;
+    }
+
+    function toggleSearchBar() {
+      const bar = document.getElementById("searchBarContainer");
+      bar.classList.toggle("hidden");
+      if (!bar.classList.contains("hidden")) document.getElementById("searchInput").focus();
+      else clearSearch();
+    }
+
+    function handleSearchInput(val) {
+      searchQuery = val.trim().toLowerCase();
+      renderFeed();
+      document.getElementById("feedContainer").scrollTop = 0;
+    }
+
+    function clearSearch() {
+      searchQuery = "";
+      document.getElementById("searchInput").value = "";
+      renderFeed();
+    }
+
+    function shareStory(title, link) {
+      const text = `${title}\nRead in 50 words on Pulse50: ${link}`;
+      if (navigator.share) navigator.share({ title, text, url: link }).catch(() => {});
+      else navigator.clipboard?.writeText(text);
+    }
+
+    function renderFeed(skipTranslationTrigger = false) {
+      const feed = document.getElementById("feedContainer");
+
+      let filtered = liveNewsItems.filter(item => {
+        if (searchQuery) {
+          const hay = `${item.title} ${item.summary} ${getLocalizedField(item, "title")} ${getLocalizedField(item, "summary")} ${item.source} ${(item.stateTags || []).join(" ")}`.toLowerCase();
+          return hay.includes(searchQuery);
+        }
+        if (activeCategory === "General") return Array.isArray(item.tags) && item.tags.includes("General");
+        if (activeCategory === "State") return Array.isArray(item.stateTags) && item.stateTags.includes(selectedState);
+        return Array.isArray(item.tags) && item.tags.includes(activeCategory);
+      });
+
+      if (pinnedAlertStoryId) {
+        const pinned = liveNewsItems.find(s => s.id === pinnedAlertStoryId);
+        if (pinned) filtered = [pinned, ...filtered.filter(s => s.id !== pinnedAlertStoryId)];
+      }
+
+      if (!skipTranslationTrigger && filtered.length) {
+        translateVisibleStories(filtered, selectedLang);
+      }
+
+      const stateBarHtml = activeCategory === "State" && !searchQuery ? `
+        <div class="sticky top-0 z-20 bg-slate-900/95 backdrop-blur px-4 py-2 border-b border-slate-800 flex items-center justify-between gap-2">
+          <span class="text-xs font-semibold text-indigo-300">Select State (District Feed):</span>
+          <select onchange="changeIndianState(this.value)" class="bg-slate-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700">
+            ${INDIAN_STATES_28.map(st => `<option value="${st}" ${st === selectedState ? "selected" : ""}>${st}</option>`).join("")}
+          </select>
+        </div>` : "";
+
+      if (!filtered.length) {
+        feed.innerHTML = stateBarHtml + `
+          <div class="h-full flex flex-col items-center justify-center p-6 text-center text-slate-400">
+            <p class="text-sm mb-3">Loading latest stories for ${activeCategory === "State" ? selectedState : activeCategory}...</p>
+            <button onclick="fetchLiveNews('manual')" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">Refresh Feed</button>
+          </div>`;
         return;
       }
 
-      container.innerHTML = items.map((item, idx) => {
+      feed.innerHTML = stateBarHtml + filtered.slice(0, 80).map((item, idx) => {
         const isPodcast = item.category === "Podcasts";
+        const displayTitle = getLocalizedField(item, "title");
+        const displaySummary = getLocalizedField(item, "summary");
+        const safeLink = item.link || "https://news.google.com";
+        const safeSource = String(item.source || "Pulse50 Desk").replace(/'/g, "\\'");
+        const safeCat = String((item.stateTags && item.stateTags[0]) || item.primaryCategory || item.category || "News").replace(/'/g, "\\'");
+        const safeTitleForJs = String(displayTitle || "").replace(/'/g, "\\'");
+        const hasVideo = Boolean(item.video);
+
         const mediaBoxClass = isPodcast
           ? "relative w-full aspect-video max-h-[34%] bg-black overflow-hidden shrink-0"
-          : "relative h-[30%] w-full bg-slate-900 overflow-hidden shrink-0";
+          : "relative h-[30%] w-full overflow-hidden shrink-0 bg-slate-900";
         const mediaImgClass = isPodcast
-          ? "w-full h-full object-contain"
-          : "w-full h-full object-cover object-top";
-
-        const safeTitle = escapeHtml(item.title || "");
-        const safeSummary = escapeHtml(item.summary || "");
-        const safeSource = escapeHtml(item.source || "Pulse50");
-        const safeCat = escapeHtml(item.primaryCategory || item.category || "News");
-        const safeLink = escapeHtml(item.video || item.link || "#");
-        const ctaLabel = isPodcast ? "▶ Watch Video ↗" : "Read Full Story ↗";
+          ? "w-full h-full object-contain transition-opacity duration-300"
+          : "w-full h-full object-cover object-top transition-opacity duration-300";
 
         return `
-          <article class="news-card flex flex-col justify-between bg-[#090d16]">
-            <div class="flex-1 flex flex-col overflow-hidden">
-              <div class="${mediaBoxClass}">
-                ${item.image ? `
-                  <img src="${escapeHtml(item.image)}" alt="${safeTitle}"
-                    onload="if (!${isPodcast} && (this.naturalWidth < 360 || this.naturalHeight < 180)) { this.onerror(); }"
-                    onerror="if (this.src.includes('maxresdefault.jpg')) { this.src = this.src.replace('maxresdefault.jpg', 'hqdefault.jpg'); return; } this.parentElement.innerHTML = buildVibrantSourceBanner('${safeSource.replace(/'/g, "\\'")}', '${safeCat.replace(/'/g, "\\'")}', ${idx})"
-                    class="${mediaImgClass}" />
-                ` : buildVibrantSourceBanner(item.source, item.primaryCategory || item.category || "News", idx)}
-              </div>
+          <article data-story-id="${item.id}" class="news-card flex flex-col justify-between bg-slate-950 border-b border-slate-900">
+            <div class="${mediaBoxClass}">
+              ${item.image ? `
+                <img src="${item.image}" alt="${displayTitle}"
+                  onload="if (!${isPodcast} && (this.naturalWidth < 480 || this.naturalHeight < 240)) { this.onerror(); }"
+                  onerror="if (this.src.includes('maxresdefault.jpg')) { this.src = this.src.replace('maxresdefault.jpg', 'hqdefault.jpg'); return; } this.parentElement.innerHTML = buildVibrantSourceBanner('${safeSource}', '${safeCat}', ${idx})"
+                  class="${mediaImgClass}" />
+                ${isPodcast ? "" : `<div class="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-black/15"></div>`}
+              ` : buildVibrantSourceBanner(item.source, safeCat, idx)}
+            </div>
 
-              <div class="px-4 pt-3.5 pb-2 flex-1 flex flex-col overflow-hidden">
-                <div class="text-xs font-semibold text-indigo-400 mb-1.5">
-                  ${safeSource} • ${timeAgo(item.pubDate)}
+            <div class="flex-1 px-4 py-3.5 flex flex-col justify-between overflow-hidden">
+              <div>
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                  <span class="font-semibold text-indigo-400 truncate">${item.source} • ${timeAgo(item.pubDate)}</span>
                 </div>
-                <h2 class="text-[19px] leading-[1.3] font-extrabold text-white mb-2.5 line-clamp-3">
-                  ${safeTitle}
-                </h2>
-                <p class="text-[14.5px] leading-[1.55] text-slate-300 line-clamp-6 break-words overflow-hidden">
-                  ${safeSummary}
-                </p>
+                <h2 class="text-[17px] sm:text-lg font-extrabold leading-snug mb-2 text-white line-clamp-3">${displayTitle}</h2>
+                <p class="text-[14.5px] leading-relaxed text-slate-300">${displaySummary}</p>
+              </div>
+
+              <div class="pt-2 flex items-center gap-2 shrink-0">
+                ${hasVideo ? `
+                  <button onclick='openVideo(${JSON.stringify({ source: item.source, title: displayTitle, video: item.video, link: safeLink }).replace(/'/g, "&#39;")})' class="py-2.5 px-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow">
+                    <span>▶ Watch</span>
+                  </button>
+                ` : ""}
+                <a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow text-center">
+                  <span>Read Full Story ↗</span>
+                </a>
+                <button onclick="shareStory('${safeTitleForJs}', '${safeLink}')" aria-label="Share story" class="py-2.5 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700">
+                  Share
+                </button>
               </div>
             </div>
-
-            <div class="shrink-0 px-4 pb-3 pt-1.5 flex items-center gap-2.5">
-              <a href="${safeLink}" target="_blank" rel="noopener noreferrer"
-                class="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white text-center text-[13px] font-bold shadow-md">
-                ${ctaLabel}
-              </a>
-              <button onclick="shareStory(${idx})" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[13px] font-semibold">
-                Share
-              </button>
-            </div>
-          </article>
-        `;
+          </article>`;
       }).join("");
+    }
 
-      if (resetScroll) {
-        container.scrollTop = 0;
+    function openVideo(item) {
+      if (!item.video) {
+        window.open(item.link, "_blank", "noopener,noreferrer");
+        return;
       }
+      document.getElementById("modalSource").textContent = item.source;
+      document.getElementById("modalTitle").textContent = item.title;
+      document.getElementById("videoFrame").src = item.video;
+      document.getElementById("videoModal").classList.remove("hidden");
+      document.getElementById("videoModal").classList.add("flex");
     }
 
-    async function shareStory(idx) {
-      const items = getFilteredStories();
-      const item = items[idx];
-      if (!item) return;
-      const shareData = {
-        title: item.title,
-        text: `${item.title}\n\n${item.summary}\n\nRead on Pulse50:`,
-        url: item.link || window.location.href
-      };
-      if (navigator.share) {
-        try { await navigator.share(shareData); } catch {}
-      } else {
-        navigator.clipboard?.writeText(`${shareData.text} ${shareData.url}`);
-        alert("Story link copied to clipboard!");
-      }
+    function closeVideo() {
+      document.getElementById("videoFrame").src = "";
+      document.getElementById("videoModal").classList.add("hidden");
+      document.getElementById("videoModal").classList.remove("flex");
     }
 
-    function mergeStories(incoming) {
-      const existingKeys = new Set(allStories.map((s) => (s.title || "").toLowerCase().trim()));
-      const brandNew = incoming.filter((s) => s.title && !existingKeys.has(s.title.toLowerCase().trim()));
-      if (!brandNew.length) return 0;
-
-      const container = document.getElementById("feedContainer");
-      if (allStories.length > 0 && container && container.scrollTop >= 20) {
-        pendingStories = [...brandNew, ...pendingStories];
-        document.getElementById("newFeedsPill").classList.remove("hidden");
-      } else {
-        allStories = [...brandNew, ...allStories].slice(0, MAX_FEED_WINDOW);
-        try { localStorage.setItem(CACHE_KEY, JSON.stringify(allStories)); } catch {}
-        renderFeed(false);
-      }
-      return brandNew.length;
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
     }
 
-    function applyPendingStories() {
-      if (!pendingStories.length) return;
-      allStories = [...pendingStories, ...allStories].slice(0, MAX_FEED_WINDOW);
-      pendingStories = [];
-      document.getElementById("newFeedsPill").classList.add("hidden");
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify(allStories)); } catch {}
-      renderFeed(true);
-    }
+    updateHeaderStatus();
+    renderCategories();
+    updateAlerts(liveNewsItems);
+    renderFeed();
+    fetchLiveNews("initial");
 
-    async function fetchFeed(isManual = false) {
-      const sub = document.getElementById("statusSubtitle");
-      if (isManual) sub.textContent = "Syncing latest AI briefs...";
-      try {
-        const res = await fetch(`${NEWS_FEED_URL}?v=${Date.now()}`, { cache: "no-store" });
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          if (allStories.length === 0) {
-            allStories = data.slice(0, MAX_FEED_WINDOW);
-            try { localStorage.setItem(CACHE_KEY, JSON.stringify(allStories)); } catch {}
-            renderFeed(true);
-          } else {
-            mergeStories(data);
-          }
-        }
-        sub.textContent = "50-Word AI Desk • Live";
-      } catch (e) {
-        sub.textContent = "50-Word AI Desk • Cached";
-      }
-    }
-
-    function manualRefresh() {
-      fetchFeed(true);
-    }
-
-    function toggleSearchModal() {
-      const modal = document.getElementById("searchModal");
-      modal.classList.toggle("hidden");
-      if (!modal.classList.contains("hidden")) {
-        document.getElementById("searchInput").focus();
-      }
-    }
-
-    function handleSearch(q) {
-      const box = document.getElementById("searchResults");
-      const term = (q || "").trim().toLowerCase();
-      if (!term) { box.innerHTML = ""; return; }
-      const matches = allStories.filter((s) =>
-        (s.title || "").toLowerCase().includes(term) ||
-        (s.summary || "").toLowerCase().includes(term) ||
-        (s.source || "").toLowerCase().includes(term)
-      ).slice(0, 15);
-
-      box.innerHTML = matches.length
-        ? matches.map((m) => `
-            <a href="${escapeHtml(m.link || "#")}" target="_blank" class="block p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800">
-              <div class="text-[11px] text-indigo-400 font-semibold">${escapeHtml(m.category)} • ${escapeHtml(m.source)}</div>
-              <div class="text-xs font-bold text-white mt-0.5">${escapeHtml(m.title)}</div>
-            </a>
-          `).join("")
-        : `<p class="text-xs text-slate-400 text-center py-4">No matching briefs found.</p>`;
-    }
-
-    function toggleAlertsModal() {
-      const modal = document.getElementById("alertsModal");
-      modal.classList.toggle("hidden");
-      if (!modal.classList.contains("hidden")) {
-        const list = document.getElementById("alertsList");
-        const alerts = buildBlendedGeneralFeed(allStories).slice(0, 15);
-        list.innerHTML = alerts.map((s) => `
-          <a href="${escapeHtml(s.link || "#")}" target="_blank" class="block p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800">
-            <div class="text-[11px] text-amber-400 font-semibold">${escapeHtml(s.source)} • ${timeAgo(s.pubDate)}</div>
-            <div class="text-xs font-bold text-white mt-0.5">${escapeHtml(s.title)}</div>
-          </a>
-        `).join("");
-      }
-    }
-
-    // Boot
-    (function init() {
-      populateStatesDropdown();
-      renderCategories();
-      try {
-        const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "[]");
-        if (Array.isArray(cached) && cached.length > 0) {
-          allStories = cached;
-        }
-      } catch {}
-      renderFeed(true);
-      fetchFeed(false);
-      setInterval(() => fetchFeed(false), 180000);
-    })();
+    setInterval(() => {
+      if (document.visibilityState === "visible") fetchLiveNews("silent");
+    }, 180000);
   </script>
 </body>
 </html>
