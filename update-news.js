@@ -29,18 +29,40 @@ const ALL_STATES = [
   "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
 ];
 
+// Rich multi-source feeds covering General (A-Z trending: Defense, Science, Research, History, Culture) + deep dedicated tab feeds
 const CORE_FEEDS = [
+  // General Trending Mix (Breaking, Defense, Science, Research, History, Culture)
   { url: 'https://feeds.feedburner.com/ndtvnews-top-stories', category: 'General', source: 'NDTV', limit: 6 },
-  { url: 'https://www.thehindu.com/news/national/feeder/default.rss', category: 'India National', source: 'The Hindu', limit: 6 },
-  { url: 'https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms', category: 'India National', source: 'Times of India', limit: 5 },
-  { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', category: 'World', source: 'BBC News', limit: 6 },
-  { url: 'https://www.aljazeera.com/xml/rss/all.xml', category: 'World', source: 'Al Jazeera', limit: 5 },
-  { url: 'https://www.thehindu.com/news/national/politics/feeder/default.rss', category: 'Politics', source: 'The Hindu', limit: 5 },
-  { url: 'https://timesofindia.indiatimes.com/rssfeeds/1898055.cms', category: 'Politics', source: 'Times of India', limit: 5 },
-  { url: 'https://feeds.bbci.co.uk/sport/rss.xml', category: 'Sports', source: 'BBC Sport', limit: 5 },
-  { url: 'https://timesofindia.indiatimes.com/rssfeeds/4719148.cms', category: 'Sports', source: 'Times of India', limit: 5 },
-  { url: 'https://timesofindia.indiatimes.com/rssfeeds/1081479906.cms', category: 'Entertainment', source: 'Times of India', limit: 5 },
-  { url: 'https://www.bollywoodhungama.com/rss/news.xml', category: 'Entertainment', source: 'Bollywood Hungama', limit: 5 }
+  { url: 'https://timesofindia.indiatimes.com/rssfeedstopstories.cms', category: 'General', source: 'Times of India', limit: 6 },
+  { url: 'https://www.thehindu.com/sci-tech/science/feeder/default.rss', category: 'General', source: 'The Hindu Science', limit: 4 },
+  { url: 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml', category: 'General', source: 'BBC Science', limit: 4 },
+  { url: 'https://www.smithsonianmag.com/rss/history/', category: 'General', source: 'Smithsonian History', limit: 3 },
+  { url: 'https://news.google.com/rss/search?q=(Indian+Army+OR+DRDO+OR+ISRO+OR+Indian+Navy+OR+IAF+defense)+when:2d&hl=en-IN&gl=IN&ceid=IN:en', category: 'General', source: 'Defense & Space Desk', limit: 4 },
+
+  // India National (Dedicated deep pool)
+  { url: 'https://www.thehindu.com/news/national/feeder/default.rss', category: 'India National', source: 'The Hindu', limit: 8 },
+  { url: 'https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms', category: 'India National', source: 'Times of India', limit: 7 },
+  { url: 'https://feeds.feedburner.com/ndtvnews-india-news', category: 'India National', source: 'NDTV India', limit: 7 },
+
+  // World (Dedicated deep pool)
+  { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', category: 'World', source: 'BBC News', limit: 8 },
+  { url: 'https://www.aljazeera.com/xml/rss/all.xml', category: 'World', source: 'Al Jazeera', limit: 7 },
+  { url: 'https://feeds.feedburner.com/ndtvnews-world-news', category: 'World', source: 'NDTV World', limit: 6 },
+
+  // Politics (Strictly political feeds + AI gatekeeper verification)
+  { url: 'https://www.thehindu.com/news/national/politics/feeder/default.rss', category: 'Politics', source: 'The Hindu', limit: 8 },
+  { url: 'https://timesofindia.indiatimes.com/rssfeeds/1898055.cms', category: 'Politics', source: 'Times of India', limit: 7 },
+  { url: 'https://news.google.com/rss/search?q=(Parliament+OR+Lok+Sabha+OR+Rajya+Sabha+OR+Union+Cabinet+OR+Election+Commission+OR+Chief+Minister+OR+BJP+OR+Congress)+when:2d&hl=en-IN&gl=IN&ceid=IN:en', category: 'Politics', source: 'India Politics Desk', limit: 7 },
+
+  // Sports (Dedicated deep pool)
+  { url: 'https://feeds.bbci.co.uk/sport/rss.xml', category: 'Sports', source: 'BBC Sport', limit: 7 },
+  { url: 'https://timesofindia.indiatimes.com/rssfeeds/4719148.cms', category: 'Sports', source: 'Times of India', limit: 7 },
+  { url: 'https://feeds.feedburner.com/ndtvsports-latest', category: 'Sports', source: 'NDTV Sports', limit: 7 },
+
+  // Entertainment (Dedicated deep pool)
+  { url: 'https://timesofindia.indiatimes.com/rssfeeds/1081479906.cms', category: 'Entertainment', source: 'Times of India', limit: 7 },
+  { url: 'https://www.bollywoodhungama.com/rss/news.xml', category: 'Entertainment', source: 'Bollywood Hungama', limit: 7 },
+  { url: 'https://feeds.feedburner.com/ndtvmovies-latest', category: 'Entertainment', source: 'NDTV Movies', limit: 6 }
 ];
 
 const PODCAST_FEEDS = [
@@ -81,8 +103,11 @@ function isBadImage(url = '') {
 function upgradeImageUrl(url = '') {
   if (!url) return '';
   return url
-    .replace(/([?&])(w|width|h|height|size|resize)=\d+/gi, '')
-    .replace(/\/thumb\//gi, '/');
+    .replace(/([?&])(w|width|h|height|size|resize|quality|q)=\d+/gi, '')
+    .replace(/\/thumb\//gi, '/')
+    .replace(/-\d{2,3}x\d{2,3}(\.(?:jpg|jpeg|png|webp))/gi, '$1')
+    .replace(/\/240\//g, '/1024/')
+    .replace(/\/320\//g, '/1024/');
 }
 
 function extractRssImage(item) {
@@ -211,10 +236,31 @@ function ensureCompleteSummary(text, fallbackTitle) {
   return cleaned;
 }
 
-async function rewriteTo50Words({ title, rawText, source, category, stateName = '', isPodcast = false }) {
+// Strict semantic check to stop non-political stories (like random crime, weather, or movies) from entering Politics
+function verifyCategorySemantically(requestedCategory, aiVerifiedCategory, title, summary) {
+  const text = `${title} ${summary}`.toLowerCase();
+
+  if (requestedCategory === 'Politics' || aiVerifiedCategory === 'Politics') {
+    const politicalSignals = /\b(parliament|lok sabha|rajya sabha|minister|ministry|cabinet|election|poll|bjp|congress|party|mp|mla|cm|chief minister|prime minister|governor|bill|ordinance|assembly|opposition|coalition|manifesto|campaign|diplomat|summit|policy)\b/i;
+    const nonPoliticalNoise = /\b(box office|trailer|actress|actor|cricket|wicket|innings|ipl|football|goal|murder|accident|weather|rainfall|stock market|ipo)\b/i;
+    if (!politicalSignals.test(text) || nonPoliticalNoise.test(text)) {
+      return false;
+    }
+  }
+
+  if (requestedCategory === 'Sports' || aiVerifiedCategory === 'Sports') {
+    const crimeCourtNoise = /\b(international criminal court|war crimes|genocide|hague|arrest warrant)\b/i;
+    if (crimeCourtNoise.test(text)) return false;
+  }
+
+  return true;
+}
+
+async function analyzeAndSummarize({ title, rawText, source, suggestedCategory, stateName = '', isPodcast = false }) {
   const contextText = (rawText || '').slice(0, 1400);
-  const prompt = isPodcast
-    ? `You are an editorial writer for Pulse50. Write a crisp, engaging 45 to 50 word summary of this podcast episode in complete, grammatically correct sentences.
+
+  if (isPodcast) {
+    const podPrompt = `You are an editorial writer for Pulse50. Write a crisp, engaging 45 to 50 word summary of this podcast episode in complete sentences.
 Rules:
 - Explain what the host and guest discuss and the core takeaway.
 - NEVER include URLs, emails, hashtags, sponsor promos, subscribe prompts, or copyright lines.
@@ -223,33 +269,49 @@ Rules:
 
 Podcast Channel: ${source}
 Episode Title: ${title}
-Episode Notes: ${contextText}`
-    : `You are a senior news editor for Pulse50. Rewrite this news story into an informative, factual 45 to 50 word gist in complete, grammatically correct sentences.
+Episode Notes: ${contextText}`;
+
+    try {
+      const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: podPrompt });
+      const out = response?.text?.trim() || '';
+      if (out && out.split(/\s+/).length >= 30) {
+        return { summary: ensureCompleteSummary(out, title), verifiedCategories: ['Podcasts'] };
+      }
+    } catch (err) {
+      console.warn(`Podcast Gemini fallback:`, err?.status || err?.message);
+    }
+    return { summary: ensureCompleteSummary(contextText, title), verifiedCategories: ['Podcasts'] };
+  }
+
+  const newsPrompt = `You are a senior news editor for Pulse50. Read this news story carefully, classify its true editorial categories, and write an informative, factual 45 to 50 word gist in complete sentences.
+
 Rules:
-- Include concrete facts (who, what, where, why/impact).
-- NEVER repeat the headline verbatim or copy-paste the headline + source name.
-- NEVER mention "${source}" or add filler like "Read the full article below".
-- Must be strictly 44 to 50 words and end with a period.
-${stateName ? `- Focus clearly on the domestic impact in ${stateName}.` : ''}
+1. Summary MUST be strictly 44 to 50 words, end with a period, include concrete facts (who, what, where, impact), and NEVER repeat the headline verbatim or mention "${source}".
+2. Classify the story accurately from ONLY these valid categories: ["India National", "World", "Politics", "Sports", "Entertainment", "Science & Research", "Defense", "History & Culture"].
+3. STRICT RULE FOR "Politics": Tag "Politics" ONLY if the story is genuinely about government policy, parliament, legislation, elections, political parties, ministers, or diplomacy. Do NOT tag routine crime, accidents, weather, sports, or entertainment as "Politics".
+${stateName ? `4. Focus clearly on the domestic impact in ${stateName}.` : ''}
+
+Return ONLY valid JSON:
+{"summary": "...", "categories": ["..."]}
 
 Headline: ${title}
-Category: ${category}
+Suggested Category: ${suggestedCategory}
 Source Material: ${contextText || title}`;
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: prompt
+      contents: newsPrompt,
+      config: { responseMimeType: 'application/json' }
     });
-    const out = response?.text?.trim() || '';
-    if (out && out.split(/\s+/).length >= 32) {
-      return ensureCompleteSummary(out, title);
-    }
+    const parsed = JSON.parse(response?.text || '{}');
+    const summary = ensureCompleteSummary(parsed.summary || contextText, title);
+    const aiCats = Array.isArray(parsed.categories) ? parsed.categories : [suggestedCategory];
+    return { summary, verifiedCategories: aiCats };
   } catch (err) {
-    console.warn(`Gemini fallback for "${title.slice(0, 40)}":`, err?.status || err?.message || 'error');
+    console.warn(`News Gemini fallback for "${title.slice(0, 35)}":`, err?.status || err?.message);
+    return { summary: ensureCompleteSummary(contextText, title), verifiedCategories: [suggestedCategory] };
   }
-
-  return ensureCompleteSummary(contextText, title);
 }
 
 async function run() {
@@ -263,7 +325,7 @@ async function run() {
     allStories.push(story);
   };
 
-  console.log('1. Fetching core category feeds...');
+  console.log('1. Fetching & semantically classifying core feeds...');
   for (const feed of CORE_FEEDS) {
     try {
       const parsed = await parser.parseURL(feed.url);
@@ -281,18 +343,31 @@ async function run() {
           if (scraped.text.length > bodyText.length) bodyText = scraped.text;
         }
 
-        const summary = await rewriteTo50Words({
+        const { summary, verifiedCategories } = await analyzeAndSummarize({
           title: rawTitle,
           rawText: bodyText,
           source: feed.source,
-          category: feed.category
+          suggestedCategory: feed.category
         });
+
+        // Build verified tags
+        const finalTags = new Set(['General']);
+        for (const cat of verifiedCategories) {
+          if (verifyCategorySemantically(cat, cat, rawTitle, summary)) {
+            finalTags.add(cat);
+          }
+        }
+        if (verifyCategorySemantically(feed.category, feed.category, rawTitle, summary)) {
+          finalTags.add(feed.category);
+        }
+
+        const primaryCat = Array.from(finalTags).find((c) => c !== 'General') || 'General';
 
         addUnique({
           id: Buffer.from(rawTitle).toString('base64').slice(0, 24),
-          category: feed.category,
-          primaryCategory: feed.category,
-          tags: [feed.category, 'General'],
+          category: primaryCat,
+          primaryCategory: primaryCat,
+          tags: Array.from(finalTags),
           stateTags: [],
           title: rawTitle,
           summary,
@@ -324,19 +399,26 @@ async function run() {
         const rawTitle = parts.join(' - ').trim();
         if (!rawTitle) continue;
 
-        const summary = await rewriteTo50Words({
+        const { summary, verifiedCategories } = await analyzeAndSummarize({
           title: rawTitle,
           rawText: rawTitle,
           source: sourceName,
-          category: 'India States',
+          suggestedCategory: 'India States',
           stateName: state
         });
+
+        const tags = new Set(['General', 'India States', 'India National']);
+        for (const cat of verifiedCategories) {
+          if (verifyCategorySemantically(cat, cat, rawTitle, summary)) {
+            tags.add(cat);
+          }
+        }
 
         addUnique({
           id: Buffer.from(`${state}-${rawTitle}`).toString('base64').slice(0, 24),
           category: 'India States',
           primaryCategory: 'India States',
-          tags: ['India States', 'India National'],
+          tags: Array.from(tags),
           stateTags: [state],
           title: rawTitle,
           summary,
@@ -367,11 +449,11 @@ async function run() {
         const thumb = videoId ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` : extractRssImage(item);
         const rawDesc = sanitizePodcastDescription(item.mediaGroup?.['media:description']?.[0] || item.contentSnippet || item.description || '');
 
-        const summary = await rewriteTo50Words({
+        const { summary } = await analyzeAndSummarize({
           title: rawTitle,
           rawText: rawDesc || rawTitle,
           source: pod.source,
-          category: 'Podcasts',
+          suggestedCategory: 'Podcasts',
           isPodcast: true
         });
 
@@ -396,6 +478,9 @@ async function run() {
       console.warn(`Podcast feed error (${pod.source}):`, e.message);
     }
   }
+
+  // Sort globally by newest pubDate first so General is a true live chronological blend across all topics—never grouped tab-by-tab
+  allStories.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 
   console.log(`Total stories generated: ${allStories.length}`);
   if (allStories.length >= 15) {
