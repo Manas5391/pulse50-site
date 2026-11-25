@@ -1,16 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pulse50 News — India &amp; World News Under 50 Words</title>
+  <meta name="description" content="Live daily trending news from India (National & State-wise), Politics, Sports, Entertainment, World, and Podcasts strictly in 50 words." />
   <meta name="theme-color" content="#090d16" />
-  <title>Pulse50 News — India & World News in 50 Words</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" type="image/png" href="icon-512.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" type="image/png" href="/icon-192.png" />
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8456169895588415" crossorigin="anonymous"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
     html, body {
       margin: 0;
       padding: 0;
@@ -23,421 +24,239 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     #feedContainer {
-      height: 100%;
-      overflow-y: scroll;
       scroll-snap-type: y mandatory;
-      scroll-behavior: smooth;
+      overflow-y: scroll;
+      height: 100%;
     }
     .news-card {
-      height: 100%;
-      width: 100%;
       scroll-snap-align: start;
       scroll-snap-stop: always;
-      display: flex;
-      flex-direction: column;
-      background: #0b101d;
+      height: 100%;
+      width: 100%;
     }
   </style>
 </head>
 <body class="flex flex-col h-[100dvh] bg-[#090d16] text-slate-100 select-none">
 
-  <!-- Top App Header -->
-  <header class="shrink-0 flex items-center justify-between px-3.5 py-2 bg-[#0b101d] border-b border-slate-800/80 z-30">
+  <!-- Top Header -->
+  <header class="shrink-0 bg-[#0d1322] border-b border-slate-800/80 px-3.5 py-2.5 flex items-center justify-between z-30">
     <div class="flex items-center gap-2.5">
-      <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-extrabold text-xs tracking-tight text-white shadow">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center font-extrabold text-white text-sm shadow-md">
         P50
       </div>
       <div>
         <div class="flex items-center gap-1.5">
-          <span class="font-bold text-sm text-white leading-none">Pulse50 News</span>
-          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <h1 class="text-[15px] font-bold tracking-tight text-white leading-none">Pulse50 News</h1>
+          <span id="liveDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
         </div>
-        <p id="deskSubtitle" class="text-[11px] text-slate-400 mt-0.5 leading-none">50-Word AI Desk • Live</p>
+        <p id="statusSubtitle" class="text-[11px] text-slate-400 mt-0.5 leading-none">50-Word AI Desk • Live</p>
       </div>
     </div>
 
     <div class="flex items-center gap-2">
-      <button id="searchToggleBtn" class="w-8 h-8 rounded-full bg-slate-800/90 hover:bg-slate-700 flex items-center justify-center text-slate-200 text-xs" title="Search">
+      <button onclick="toggleSearchModal()" aria-label="Search" class="w-9 h-9 rounded-full bg-slate-800/90 hover:bg-slate-700 flex items-center justify-center text-slate-200 text-sm">
         🔍
       </button>
-      <button id="notifBtn" class="relative w-8 h-8 rounded-full bg-slate-800/90 hover:bg-slate-700 flex items-center justify-center text-slate-200 text-xs" title="Trending Alerts">
+      <button onclick="toggleAlertsModal()" aria-label="Trending Alerts" class="relative w-9 h-9 rounded-full bg-slate-800/90 hover:bg-slate-700 flex items-center justify-center text-slate-200 text-sm">
         🔔
-        <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500"></span>
+        <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400"></span>
       </button>
-      <button id="syncBtn" class="px-2.5 py-1.5 rounded-full bg-emerald-950/90 border border-emerald-700/60 text-emerald-300 text-xs font-medium flex items-center gap-1">
+      <button onclick="manualRefresh()" class="px-3 py-1.5 rounded-full bg-emerald-950/90 border border-emerald-600/40 text-emerald-300 text-xs font-semibold flex items-center gap-1 active:scale-95">
         ↻ Live
       </button>
     </div>
   </header>
 
   <!-- Category Tabs -->
-  <nav id="categoryBar" class="shrink-0 flex items-center gap-2 px-3 py-2 bg-[#090d16] border-b border-slate-800/70 overflow-x-auto no-scrollbar z-20"></nav>
+  <nav id="categoryBar" class="shrink-0 bg-[#0b101d] border-b border-slate-800/70 px-3 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar z-20"></nav>
 
-  <!-- Search Bar -->
-  <div id="searchBarWrap" class="hidden shrink-0 px-3 py-2 bg-[#0f1626] border-b border-slate-800 z-20">
-    <div class="flex items-center gap-2">
-      <input id="searchInput" type="text" placeholder="Search headlines, topics, states..." class="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500" />
-      <button id="clearSearchBtn" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-xs text-slate-300">Clear</button>
-    </div>
+  <!-- State Selector Bar (Shown only on India States tab) -->
+  <div id="stateBar" class="hidden shrink-0 bg-[#0f1629] border-b border-slate-800 px-3.5 py-1.5 flex items-center justify-between gap-2 z-20">
+    <label for="stateSelect" class="text-xs font-medium text-slate-300">Select State:</label>
+    <select id="stateSelect" onchange="changeState(this.value)" class="bg-slate-800 text-white text-xs font-medium rounded-lg px-3 py-1.5 border border-slate-700 focus:outline-none focus:border-indigo-500 min-w-[170px]"></select>
   </div>
 
-  <!-- State Selector Bar -->
-  <div id="stateBarWrap" class="hidden shrink-0 flex items-center justify-between px-3.5 py-1.5 bg-[#0f1626] border-b border-slate-800 z-20">
-    <span class="text-xs text-slate-400 font-medium">Select State:</span>
-    <select id="stateSelect" class="px-3 py-1 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-indigo-500"></select>
-  </div>
+  <!-- Floating New Feeds Available Pill -->
+  <button id="newFeedsPill" onclick="applyPendingStories()" class="hidden fixed top-[106px] left-1/2 -translate-x-1/2 z-40 px-4 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-950/80 border border-indigo-400/40 transition-all">
+    ↑ New Feeds Available
+  </button>
 
-  <!-- Main Feed Area -->
-  <main class="relative flex-1 min-h-0 w-full overflow-hidden">
-    <button id="newFeedsPill" class="hidden absolute top-2.5 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-950/80 border border-indigo-400/40">
-      ↑ New Feeds Available
-    </button>
-
-    <div id="feedContainer"></div>
+  <!-- Main Vertical Snap Feed -->
+  <main class="relative flex-1 overflow-hidden">
+    <div id="feedContainer" class="no-scrollbar"></div>
   </main>
 
-  <!-- Clean AdSense-Safe Footer -->
-  <footer class="shrink-0 flex items-center justify-between px-3.5 py-1.5 bg-[#070a12] border-t border-slate-800/80 text-[11px] text-slate-400 z-30">
+  <!-- Footer -->
+  <footer id="adFooter" class="shrink-0 bg-[#0b101d] border-t border-slate-800/80 px-3.5 py-2 flex items-center justify-between text-[11px] text-slate-400 z-30">
     <span>© 2026 Pulse50 News</span>
     <div class="flex items-center gap-3">
-      <a href="about.html" class="hover:text-white">About</a>
-      <a href="contact.html" class="hover:text-white">Contact</a>
-      <a href="privacy-policy.html" class="hover:text-white">Privacy</a>
-      <a href="terms.html" class="hover:text-white">Terms</a>
+      <a href="/about.html" class="hover:text-white">About</a>
+      <a href="/contact.html" class="hover:text-white">Contact</a>
+      <a href="/privacy-policy.html" class="hover:text-white">Privacy</a>
+      <a href="/terms.html" class="hover:text-white">Terms</a>
     </div>
   </footer>
 
-  <!-- Trending Alerts Drawer -->
-  <div id="notifModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center">
-    <div class="w-full max-w-md max-h-[80dvh] bg-[#0f172a] border border-slate-700 rounded-t-2xl sm:rounded-2xl flex flex-col overflow-hidden">
-      <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
-        <span class="font-bold text-sm text-white">Trending Alerts</span>
-        <button id="closeNotifBtn" class="text-slate-400 hover:text-white text-sm px-2 py-0.5">✕</button>
+  <!-- Search Modal -->
+  <div id="searchModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col p-4">
+    <div class="bg-[#111827] border border-slate-700 rounded-2xl p-4 max-w-lg w-full mx-auto mt-6">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold text-white">Search 50-Word Briefs</h2>
+        <button onclick="toggleSearchModal()" class="text-slate-400 hover:text-white text-sm px-2">✕</button>
       </div>
-      <div id="notifList" class="p-3 overflow-y-auto space-y-2"></div>
+      <input id="searchInput" type="text" oninput="handleSearch(this.value)" placeholder="Search headlines, states, topics..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" />
+      <div id="searchResults" class="mt-3 max-h-[60vh] overflow-y-auto space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- Trending Alerts Modal -->
+  <div id="alertsModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col p-4">
+    <div class="bg-[#111827] border border-slate-700 rounded-2xl p-4 max-w-lg w-full mx-auto mt-6">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold text-white">Top Breaking Alerts</h2>
+        <button onclick="toggleAlertsModal()" class="text-slate-400 hover:text-white text-sm px-2">✕</button>
+      </div>
+      <div id="alertsList" class="max-h-[65vh] overflow-y-auto space-y-2.5"></div>
     </div>
   </div>
 
   <script>
-    const CATEGORIES = [
-      'General',
-      'India National',
-      'World',
-      'India States',
-      'Politics',
-      'Sports',
-      'Entertainment',
-      'Podcasts'
-    ];
-
-    const INDIAN_STATES = [
-      'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-      'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
-      'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
-      'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
-      'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
-    ];
-
-    // Direct RSS endpoints that carry real article descriptions (never headline-only Google News RSS)
-    const LIVE_CATEGORY_ENDPOINTS = {
-      'India National': 'https://www.thehindu.com/news/national/feeder/default.rss',
-      'World': 'https://feeds.bbci.co.uk/news/world/rss.xml',
-      'Politics': 'https://www.thehindu.com/news/national/feeder/default.rss',
-      'Sports': 'https://feeds.bbci.co.uk/sport/rss.xml',
-      'Entertainment': 'https://www.bollywoodhungama.com/rss/news.xml'
-    };
-
+    const NEWS_FEED_URL = "https://raw.githubusercontent.com/Manas5391/pulse50-site/main/news.json";
+    const CACHE_KEY = "pulse50_stories_v9";
     const MAX_FEED_WINDOW = 600;
-    const STORAGE_KEY = 'pulse50_stories_v8';
+
+    const CATEGORIES = [
+      "General",
+      "India National",
+      "World",
+      "India States",
+      "Politics",
+      "Sports",
+      "Entertainment",
+      "Podcasts"
+    ];
+
+    const ALL_STATES = [
+      "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+      "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+      "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+      "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+      "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+    ];
 
     let allStories = [];
     let pendingStories = [];
-    let activeCategory = 'General';
-    let selectedState = 'Telangana';
-    let searchQuery = '';
-    const fetchedLiveBuckets = new Set();
+    let activeCategory = "General";
+    let selectedState = "Telangana";
 
-    const feedContainer = document.getElementById('feedContainer');
-    const categoryBar = document.getElementById('categoryBar');
-    const stateBarWrap = document.getElementById('stateBarWrap');
-    const stateSelect = document.getElementById('stateSelect');
-    const newFeedsPill = document.getElementById('newFeedsPill');
-    const deskSubtitle = document.getElementById('deskSubtitle');
-
-    function isSummaryJustHeadline(summary, title) {
-      const norm = (s) => String(s || '')
-        .replace(/\s+[-–|]\s*(The Times of India|Times of India|India Today|The New Indian Express|NDTV|The Hindu|Hindustan Times|Indian Express)\.?\s*$/i, '')
-        .replace(/\s+(The Times of India|Times of India|India Today|The New Indian Express|NDTV|The Hindu|Hindustan Times|Indian Express)\.?\s*$/i, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '');
-      const a = norm(summary);
-      const b = norm(title);
-      if (!a || !b) return true;
-      return a === b || a.startsWith(b) || b.startsWith(a);
+    function escapeHtml(str = "") {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
     }
 
-    function sanitizeSummaryText(text, title = '') {
-      if (!text) return '';
-      let clean = String(text)
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/https?:\/\/\S+/gi, '')
-        .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '')
-        .replace(/Account subscription benefits alongside Premium Stories[\s\S]*?Subscription/gi, '')
-        .replace(/Updated\s*-\s*[A-Za-z]+\s+\d+,\s*\d{4}\s+\d+:\d+\s*(?:am|pm)\s*IST\s*-?/gi, '')
-        .replace(/Get your hand-picked playbook[\s\S]*?(?=Disclaimer:|$)/gi, '')
-        .replace(/Guest Suggestion Form:[\s\S]*?(?=Disclaimer:|$)/gi, '')
-        .replace(/Design Your Own Podcast Episode:[\s\S]*?(?=Disclaimer:|$)/gi, '')
-        .replace(/Disclaimer:\s*This video is intended solely[\s\S]*$/gi, '')
-        .replace(/Email to:.*$/gis, '')
-        .replace(/Copyrights?\s*©.*$/gis, '')
-        .replace(/[-_=]{4,}/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-      if (title && isSummaryJustHeadline(clean, title)) return '';
-
-      const words = clean.split(/\s+/).filter(Boolean);
-      if (words.length > 50) {
-        clean = words.slice(0, 48).join(' ').replace(/[,;:-]+$/, '') + '.';
-      } else if (clean && !/[.!?]$/.test(clean)) {
-        clean += '.';
-      }
-      return clean;
-    }
-
-    function upgradeImageUrl(url) {
-      if (!url || typeof url !== 'string') return '';
-      const u = url.toLowerCase();
-      if (!u.startsWith('http')) return '';
-      if (u.includes('lh3.googleusercontent.com') || u.includes('gstatic.com')) return '';
-      if (u.includes('th-online') || u.includes('default-article') || u.includes('placeholder') || u.includes('logo') || u.includes('1x1')) return '';
-
-      return url
-        .replace(/([?&])(w|width|h|height|quality|q)=\d+/gi, '')
-        .replace(/resize=\d+[,x]\d+/gi, 'resize=1200,675')
-        .replace(/-\d{2,3}x\d{2,3}(\.(?:jpg|jpeg|png|webp))/gi, '$1')
-        .replace(/\/(hqdefault|sddefault|mqdefault|default)\.jpg/i, '/maxresdefault.jpg')
-        .replace(/[?&]+$/, '');
-    }
-
-    function getVibrantGradient(seedStr) {
-      const palettes = [
-        'from-indigo-600 via-blue-700 to-slate-900',
-        'from-emerald-600 via-teal-700 to-slate-900',
-        'from-rose-600 via-pink-700 to-slate-900',
-        'from-amber-600 via-orange-700 to-slate-900',
-        'from-violet-600 via-purple-700 to-slate-900',
-        'from-cyan-600 via-sky-700 to-slate-900'
-      ];
-      let hash = 0;
-      for (let i = 0; i < seedStr.length; i++) hash = seedStr.charCodeAt(i) + ((hash << 5) - hash);
-      return palettes[Math.abs(hash) % palettes.length];
-    }
-
-    function formatTimeAgo(ts) {
-      if (!ts) return 'Just now';
-      const mins = Math.max(1, Math.floor((Date.now() - ts) / 60000));
+    function timeAgo(dateStr) {
+      if (!dateStr) return "Today";
+      const parsed = Date.parse(dateStr);
+      if (isNaN(parsed)) return "Today";
+      const diffSec = Math.max(1, Math.floor((Date.now() - parsed) / 1000));
+      if (diffSec < 60) return "Just now";
+      const mins = Math.floor(diffSec / 60);
       if (mins < 60) return `${mins}m ago`;
       const hrs = Math.floor(mins / 60);
       if (hrs < 24) return `${hrs}h ago`;
-      return `${Math.floor(hrs / 24)}d ago`;
+      const days = Math.floor(hrs / 24);
+      return `${days}d ago`;
     }
 
-    function normalizeStory(raw) {
-      const title = (raw.title || '')
-        .replace(/\s+[-–|]\s*(The Times of India|Times of India|India Today|The New Indian Express|NDTV|The Hindu|Hindustan Times|Indian Express)\.?\s*$/i, '')
-        .trim();
-      const summary = sanitizeSummaryText(raw.summary || '', title);
-      const source = (raw.source || 'Pulse50 Desk').trim();
-      const category = raw.category || 'General';
-      const state = raw.state || '';
-      const image = upgradeImageUrl(raw.image || '');
-      return {
-        id: raw.id || btoa(unescape(encodeURIComponent(title))).slice(0, 24),
-        title,
-        summary,
-        source,
-        category,
-        isTrending: Boolean(raw.isTrending || category === 'General'),
-        state,
-        image,
-        url: raw.url || '',
-        videoUrl: raw.videoUrl || '',
-        pubDate: raw.pubDate || Date.now()
-      };
-    }
-
-    function loadCachedStories() {
-      try {
-        localStorage.removeItem('pulse50_stories_v7');
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        if (Array.isArray(saved)) {
-          allStories = saved.map(normalizeStory).filter((s) => s.title && s.summary && s.summary.split(/\s+/).length >= 16);
-        }
-      } catch {
-        allStories = [];
-      }
-    }
-
-    function saveCachedStories() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(allStories.slice(0, MAX_FEED_WINDOW)));
-      } catch {}
-    }
-
-    function buildBannerMarkup(story, isPodcast = false) {
-      const grad = getVibrantGradient(story.source + story.category);
-      const fallbackHtml = `
-        <div class="w-full h-full bg-gradient-to-br ${grad} flex flex-col items-center justify-center px-4 text-center">
-          <div class="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center font-black text-base text-white shadow-md mb-1.5">
+    function buildVibrantSourceBanner(source = "Pulse50", category = "News", idx = 0) {
+      const gradients = [
+        "from-rose-600 via-pink-700 to-slate-900",
+        "from-indigo-600 via-blue-700 to-slate-900",
+        "from-emerald-600 via-teal-700 to-slate-900",
+        "from-amber-600 via-orange-700 to-slate-900",
+        "from-violet-600 via-purple-700 to-slate-900"
+      ];
+      const grad = gradients[idx % gradients.length];
+      const cleanSource = escapeHtml(source || "Pulse50");
+      const cleanCat = escapeHtml((category || "NEWS").toUpperCase());
+      return `
+        <div class="w-full h-full bg-gradient-to-br ${grad} flex flex-col items-center justify-center p-4 text-center">
+          <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center font-extrabold text-white text-base shadow-lg mb-2">
             P50
           </div>
-          <span class="text-xs font-bold tracking-wide uppercase text-white/95">${story.source}</span>
-          <span class="text-[10px] text-white/75 mt-0.5">Pulse50 Verified Desk</span>
+          <div class="text-xs font-extrabold tracking-wider text-white uppercase">${cleanCat}</div>
+          <div class="text-[11px] text-white/80 mt-0.5">${cleanSource}</div>
         </div>
       `;
-
-      if (!story.image) return fallbackHtml;
-
-      const fitClass = isPodcast ? 'w-full h-full object-contain' : 'w-full h-full object-cover object-top';
-      return `
-        <img
-          src="${story.image}"
-          alt=""
-          loading="lazy"
-          class="${fitClass}"
-          onerror="if(this.src.includes('maxresdefault.jpg')){ this.src=this.src.replace('maxresdefault.jpg','hqdefault.jpg'); return; } this.parentElement.innerHTML=\`${fallbackHtml.replace(/"/g, '&quot;').replace(/\n/g, '')}\`"
-          onload="if(!${isPodcast} && (this.naturalWidth < 480 || this.naturalHeight < 240)){ this.onerror(); }"
-        />
-      `;
-    }
-
-    function getFilteredStories() {
-      return allStories.filter((story) => {
-        if (searchQuery) {
-          const q = searchQuery.toLowerCase();
-          return (
-            story.title.toLowerCase().includes(q) ||
-            story.summary.toLowerCase().includes(q) ||
-            story.source.toLowerCase().includes(q) ||
-            (story.state && story.state.toLowerCase().includes(q))
-          );
-        }
-
-        if (activeCategory === 'General') {
-          return story.isTrending && story.category !== 'India States' && story.category !== 'Podcasts';
-        }
-        if (activeCategory === 'India States') {
-          return story.category === 'India States' && story.state === selectedState;
-        }
-        return story.category === activeCategory;
-      });
-    }
-
-    // Fetch supplementary stories only from feeds with real article bodies (never headline-only RSS)
-    async function fetchMoreForBucket(bucketKey, rssUrl, targetCategory) {
-      if (!rssUrl || fetchedLiveBuckets.has(bucketKey)) return;
-      fetchedLiveBuckets.add(bucketKey);
-      deskSubtitle.textContent = `Fetching live ${targetCategory}...`;
-
-      try {
-        const api = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&_t=${Math.floor(Date.now() / 60000)}`;
-        const res = await fetch(api);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.status !== 'ok' || !Array.isArray(data.items)) return;
-
-        const existingTitles = new Set(allStories.map((s) => s.title.toLowerCase()));
-        const freshBucketStories = [];
-
-        for (const item of data.items.slice(0, 8)) {
-          const rawTitle = item.title || '';
-          if (item.link?.includes('/shorts/') || /#shorts|\blive:/i.test(rawTitle)) continue;
-
-          const sourceMatch = rawTitle.match(/\s+-\s+([^-]+)$/);
-          const pubSource = sourceMatch ? sourceMatch[1].trim() : targetCategory;
-          const title = rawTitle.replace(/\s+-\s+[^-]+$/, '').replace(/#[\w]+/g, '').trim();
-          if (!title || title.length < 15 || existingTitles.has(title.toLowerCase())) continue;
-
-          const summary = sanitizeSummaryText(item.description || item.content || '', title);
-          if (!summary || summary.split(/\s+/).length < 18) continue;
-
-          const img = upgradeImageUrl(item.thumbnail || item.enclosure?.link || '');
-
-          existingTitles.add(title.toLowerCase());
-          freshBucketStories.push({
-            id: btoa(unescape(encodeURIComponent(title))).slice(0, 24),
-            title,
-            summary,
-            source: pubSource,
-            category: targetCategory,
-            isTrending: false,
-            state: '',
-            image: img,
-            url: item.link || '',
-            videoUrl: '',
-            pubDate: item.pubDate ? new Date(item.pubDate).getTime() : Date.now()
-          });
-        }
-
-        if (freshBucketStories.length > 0) {
-          allStories = [...freshBucketStories, ...allStories].slice(0, MAX_FEED_WINDOW);
-          saveCachedStories();
-          if (activeCategory === targetCategory) {
-            renderFeed(feedContainer.scrollTop < 15);
-          }
-        }
-      } catch (e) {
-        console.error('Bucket live fetch failed:', e);
-      } finally {
-        deskSubtitle.textContent = '50-Word AI Desk • Live';
-      }
     }
 
     function renderCategories() {
-      categoryBar.innerHTML = CATEGORIES.map((cat) => {
+      const bar = document.getElementById("categoryBar");
+      bar.innerHTML = CATEGORIES.map((cat) => {
         const isActive = cat === activeCategory;
-        const label = cat === 'India States' ? `States: ${selectedState}` : cat;
-        return `
-          <button
-            data-cat="${cat}"
-            class="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition ${
-              isActive
-                ? 'bg-indigo-600 text-white shadow'
-                : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700'
-            }"
-          >${label}</button>
-        `;
-      }).join('');
+        const label = cat === "India States" ? `States: ${selectedState}` : cat;
+        const cls = isActive
+          ? "bg-indigo-600 text-white shadow-sm"
+          : "bg-slate-800/80 text-slate-300 hover:bg-slate-700";
+        return `<button onclick="selectCategory('${cat}')" class="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${cls}">${escapeHtml(label)}</button>`;
+      }).join("");
 
-      categoryBar.querySelectorAll('button').forEach((btn) => {
-        btn.onclick = () => {
-          activeCategory = btn.dataset.cat;
-          stateBarWrap.classList.toggle('hidden', activeCategory !== 'India States');
-          renderCategories();
-          renderFeed(true);
+      const stateBar = document.getElementById("stateBar");
+      if (activeCategory === "India States") {
+        stateBar.classList.remove("hidden");
+      } else {
+        stateBar.classList.add("hidden");
+      }
+    }
 
-          if (LIVE_CATEGORY_ENDPOINTS[activeCategory]) {
-            fetchMoreForBucket(
-              `cat:${activeCategory}`,
-              LIVE_CATEGORY_ENDPOINTS[activeCategory],
-              activeCategory
-            );
-          }
-        };
-      });
+    function populateStatesDropdown() {
+      const sel = document.getElementById("stateSelect");
+      sel.innerHTML = ALL_STATES.map((st) =>
+        `<option value="${escapeHtml(st)}" ${st === selectedState ? "selected" : ""}>${escapeHtml(st)}</option>`
+      ).join("");
+    }
+
+    function selectCategory(cat) {
+      activeCategory = cat;
+      renderCategories();
+      renderFeed(true);
+    }
+
+    function changeState(st) {
+      selectedState = st;
+      renderCategories();
+      renderFeed(true);
+    }
+
+    function getFilteredStories() {
+      if (activeCategory === "General") {
+        return allStories.filter((s) => s.category !== "India States" && s.category !== "Podcasts");
+      }
+      if (activeCategory === "India States") {
+        return allStories.filter((s) =>
+          (Array.isArray(s.stateTags) && s.stateTags.includes(selectedState)) ||
+          (s.category === "India States" && (s.title || "").toLowerCase().includes(selectedState.toLowerCase()))
+        );
+      }
+      return allStories.filter((s) => s.category === activeCategory || (Array.isArray(s.tags) && s.tags.includes(activeCategory)));
     }
 
     function renderFeed(resetScroll = false) {
+      const container = document.getElementById("feedContainer");
       const items = getFilteredStories();
 
       if (!items.length) {
-        feedContainer.innerHTML = `
-          <div class="h-full flex flex-col items-center justify-center px-6 text-center">
-            <p class="text-sm text-slate-400 mb-3">
-              ${activeCategory === 'India States' ? `Syncing verified AI briefs for ${selectedState}...` : `Fetching latest ${activeCategory} stories...`}
-            </p>
-            <button onclick="fetchNewsFeed(true)" class="px-4 py-2 rounded-full bg-indigo-600 text-white text-xs font-semibold">
+        const msg = activeCategory === "India States"
+          ? `Syncing verified AI briefs for ${escapeHtml(selectedState)}...`
+          : `Fetching latest ${escapeHtml(activeCategory)} stories...`;
+        container.innerHTML = `
+          <div class="h-full w-full flex flex-col items-center justify-center px-6 text-center">
+            <p class="text-sm text-slate-400 mb-4">${msg}</p>
+            <button onclick="manualRefresh()" class="px-5 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md">
               ↻ Sync Latest Feed
             </button>
           </div>
@@ -445,174 +264,190 @@
         return;
       }
 
-      feedContainer.innerHTML = items.map((story) => {
-        const isPodcast = story.category === 'Podcasts' || Boolean(story.videoUrl);
-        const targetLink = story.videoUrl || story.url || '#';
-        const mediaWrapperClass = isPodcast
-          ? 'relative w-full aspect-video max-h-[34%] shrink-0 bg-black overflow-hidden'
-          : 'relative w-full h-[30%] shrink-0 bg-slate-900 overflow-hidden';
-        return `
-          <article class="news-card">
-            <!-- Sharp Image (Full 16:9 for Podcasts, 30% Cover for News) or Vibrant Brand Banner -->
-            <div class="${mediaWrapperClass}">
-              ${buildBannerMarkup(story, isPodcast)}
-            </div>
+      container.innerHTML = items.map((item, idx) => {
+        const isPodcast = item.category === "Podcasts";
+        const mediaBoxClass = isPodcast
+          ? "relative w-full aspect-video max-h-[34%] bg-black overflow-hidden shrink-0"
+          : "relative h-[30%] w-full bg-slate-900 overflow-hidden shrink-0";
+        const mediaImgClass = isPodcast
+          ? "w-full h-full object-contain"
+          : "w-full h-full object-cover object-top";
 
-            <!-- Content Body -->
-            <div class="flex-1 min-h-0 flex flex-col justify-between px-4 pt-3 pb-3">
-              <div class="min-h-0 overflow-hidden">
-                <div class="text-xs font-semibold text-indigo-400 mb-1.5 truncate">
-                  ${story.source} • ${formatTimeAgo(story.pubDate)}
+        const safeTitle = escapeHtml(item.title || "");
+        const safeSummary = escapeHtml(item.summary || "");
+        const safeSource = escapeHtml(item.source || "Pulse50");
+        const safeCat = escapeHtml(item.primaryCategory || item.category || "News");
+        const safeLink = escapeHtml(item.video || item.link || "#");
+        const ctaLabel = isPodcast ? "▶ Watch Video ↗" : "Read Full Story ↗";
+
+        return `
+          <article class="news-card flex flex-col justify-between bg-[#090d16]">
+            <div class="flex-1 flex flex-col overflow-hidden">
+              <div class="${mediaBoxClass}">
+                ${item.image ? `
+                  <img src="${escapeHtml(item.image)}" alt="${safeTitle}"
+                    onload="if (!${isPodcast} && (this.naturalWidth < 200 || this.naturalHeight < 120)) { this.onerror(); }"
+                    onerror="if (this.src.includes('maxresdefault.jpg')) { this.src = this.src.replace('maxresdefault.jpg', 'hqdefault.jpg'); return; } this.parentElement.innerHTML = buildVibrantSourceBanner('${safeSource.replace(/'/g, "\\'")}', '${safeCat.replace(/'/g, "\\'")}', ${idx})"
+                    class="${mediaImgClass}" />
+                ` : buildVibrantSourceBanner(item.source, item.primaryCategory || item.category || "News", idx)}
+              </div>
+
+              <div class="px-4 pt-3.5 pb-2 flex-1 flex flex-col overflow-hidden">
+                <div class="text-xs font-semibold text-indigo-400 mb-1.5">
+                  ${safeSource} • ${timeAgo(item.pubDate)}
                 </div>
-                <h2 class="text-[17px] font-bold leading-snug text-white mb-2 line-clamp-3">
-                  ${story.title}
+                <h2 class="text-[19px] leading-[1.3] font-extrabold text-white mb-2.5 line-clamp-3">
+                  ${safeTitle}
                 </h2>
-                <p class="text-[14px] leading-relaxed text-slate-300 line-clamp-6 break-words">
-                  ${story.summary}
+                <p class="text-[14.5px] leading-[1.55] text-slate-300 line-clamp-6 break-words overflow-hidden">
+                  ${safeSummary}
                 </p>
               </div>
+            </div>
 
-              <!-- Always-Visible Bottom Action Row -->
-              <div class="shrink-0 pt-2.5 flex items-center gap-2">
-                ${
-                  isPodcast
-                    ? `<a href="${targetLink}" target="_blank" rel="noopener" class="flex-1 py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold text-center">▶ Watch Video</a>
-                       <a href="${targetLink}" target="_blank" rel="noopener" class="py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">YouTube ↗</a>`
-                    : `<a href="${targetLink}" target="_blank" rel="noopener" class="flex-1 py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold text-center">Read Full Story ↗</a>`
-                }
-                <button onclick="shareStory('${story.title.replace(/'/g, "\\'")}', '${targetLink}')" class="py-2.5 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold">
-                  Share
-                </button>
-              </div>
+            <div class="shrink-0 px-4 pb-3 pt-1.5 flex items-center gap-2.5">
+              <a href="${safeLink}" target="_blank" rel="noopener noreferrer"
+                class="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white text-center text-[13px] font-bold shadow-md">
+                ${ctaLabel}
+              </a>
+              <button onclick="shareStory(${idx})" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[13px] font-semibold">
+                Share
+              </button>
             </div>
           </article>
         `;
-      }).join('');
+      }).join("");
 
       if (resetScroll) {
-        feedContainer.scrollTop = 0;
+        container.scrollTop = 0;
       }
     }
 
-    function shareStory(title, url) {
+    async function shareStory(idx) {
+      const items = getFilteredStories();
+      const item = items[idx];
+      if (!item) return;
+      const shareData = {
+        title: item.title,
+        text: `${item.title}\n\n${item.summary}\n\nRead on Pulse50:`,
+        url: item.link || window.location.href
+      };
       if (navigator.share) {
-        navigator.share({ title, url }).catch(() => {});
+        try { await navigator.share(shareData); } catch {}
       } else {
-        navigator.clipboard?.writeText(`${title} ${url}`);
+        navigator.clipboard?.writeText(`${shareData.text} ${shareData.url}`);
+        alert("Story link copied to clipboard!");
       }
     }
 
-    async function fetchNewsFeed(forceImmediate = false) {
+    function mergeStories(incoming) {
+      const existingKeys = new Set(allStories.map((s) => (s.title || "").toLowerCase().trim()));
+      const brandNew = incoming.filter((s) => s.title && !existingKeys.has(s.title.toLowerCase().trim()));
+      if (!brandNew.length) return 0;
+
+      const container = document.getElementById("feedContainer");
+      if (allStories.length > 0 && container && container.scrollTop >= 20) {
+        pendingStories = [...brandNew, ...pendingStories];
+        document.getElementById("newFeedsPill").classList.remove("hidden");
+      } else {
+        allStories = [...brandNew, ...allStories].slice(0, MAX_FEED_WINDOW);
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(allStories)); } catch {}
+        renderFeed(false);
+      }
+      return brandNew.length;
+    }
+
+    function applyPendingStories() {
+      if (!pendingStories.length) return;
+      allStories = [...pendingStories, ...allStories].slice(0, MAX_FEED_WINDOW);
+      pendingStories = [];
+      document.getElementById("newFeedsPill").classList.add("hidden");
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(allStories)); } catch {}
+      renderFeed(true);
+    }
+
+    async function fetchFeed(isManual = false) {
+      const sub = document.getElementById("statusSubtitle");
+      if (isManual) sub.textContent = "Syncing latest AI briefs...";
       try {
-        const res = await fetch(`https://raw.githubusercontent.com/Manas5391/pulse50-site/main/news.json?v=${Date.now()}`, { cache: 'no-store' });
-        if (!res.ok) return;
-        const rawList = await res.json();
-        if (!Array.isArray(rawList) || !rawList.length) return;
-
-        const incoming = rawList.map(normalizeStory).filter((s) => s.title && s.summary && s.summary.split(/\s+/).length >= 16);
-        const existingTitles = new Set(allStories.map((s) => s.title.toLowerCase()));
-        const brandNew = incoming.filter((s) => !existingTitles.has(s.title.toLowerCase()));
-
-        if (!allStories.length || forceImmediate) {
-          allStories = [...brandNew, ...allStories].slice(0, MAX_FEED_WINDOW);
-          if (!allStories.length) allStories = incoming.slice(0, MAX_FEED_WINDOW);
-          saveCachedStories();
-          newFeedsPill.classList.add('hidden');
-          renderFeed(true);
-        } else if (brandNew.length > 0) {
-          if (feedContainer.scrollTop < 15) {
-            allStories = [...brandNew, ...allStories].slice(0, MAX_FEED_WINDOW);
-            saveCachedStories();
+        const res = await fetch(`${NEWS_FEED_URL}?v=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          if (allStories.length === 0) {
+            allStories = data.slice(0, MAX_FEED_WINDOW);
+            try { localStorage.setItem(CACHE_KEY, JSON.stringify(allStories)); } catch {}
             renderFeed(true);
           } else {
-            pendingStories = [...brandNew, ...pendingStories];
-            newFeedsPill.classList.remove('hidden');
+            mergeStories(data);
           }
         }
+        sub.textContent = "50-Word AI Desk • Live";
       } catch (e) {
-        console.error('Sync error:', e);
+        sub.textContent = "50-Word AI Desk • Cached";
       }
     }
 
-    newFeedsPill.onclick = () => {
-      if (pendingStories.length) {
-        allStories = [...pendingStories, ...allStories].slice(0, MAX_FEED_WINDOW);
-        pendingStories = [];
-        saveCachedStories();
+    function manualRefresh() {
+      fetchFeed(true);
+    }
+
+    function toggleSearchModal() {
+      const modal = document.getElementById("searchModal");
+      modal.classList.toggle("hidden");
+      if (!modal.classList.contains("hidden")) {
+        document.getElementById("searchInput").focus();
       }
-      newFeedsPill.classList.add('hidden');
-      activeCategory = 'General';
-      stateBarWrap.classList.add('hidden');
-      renderCategories();
-      renderFeed(true);
-    };
+    }
 
-    // Init State Dropdown
-    stateSelect.innerHTML = INDIAN_STATES.map(
-      (st) => `<option value="${st}" ${st === selectedState ? 'selected' : ''}>${st}</option>`
-    ).join('');
+    function handleSearch(q) {
+      const box = document.getElementById("searchResults");
+      const term = (q || "").trim().toLowerCase();
+      if (!term) { box.innerHTML = ""; return; }
+      const matches = allStories.filter((s) =>
+        (s.title || "").toLowerCase().includes(term) ||
+        (s.summary || "").toLowerCase().includes(term) ||
+        (s.source || "").toLowerCase().includes(term)
+      ).slice(0, 15);
 
-    stateSelect.onchange = () => {
-      selectedState = stateSelect.value;
-      renderCategories();
-      renderFeed(true);
-    };
+      box.innerHTML = matches.length
+        ? matches.map((m) => `
+            <a href="${escapeHtml(m.link || "#")}" target="_blank" class="block p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800">
+              <div class="text-[11px] text-indigo-400 font-semibold">${escapeHtml(m.category)} • ${escapeHtml(m.source)}</div>
+              <div class="text-xs font-bold text-white mt-0.5">${escapeHtml(m.title)}</div>
+            </a>
+          `).join("")
+        : `<p class="text-xs text-slate-400 text-center py-4">No matching briefs found.</p>`;
+    }
 
-    // Search Controls
-    document.getElementById('searchToggleBtn').onclick = () => {
-      const wrap = document.getElementById('searchBarWrap');
-      wrap.classList.toggle('hidden');
-      if (!wrap.classList.contains('hidden')) document.getElementById('searchInput').focus();
-    };
-    document.getElementById('searchInput').oninput = (e) => {
-      searchQuery = e.target.value.trim();
-      renderFeed(true);
-    };
-    document.getElementById('clearSearchBtn').onclick = () => {
-      searchQuery = '';
-      document.getElementById('searchInput').value = '';
-      document.getElementById('searchBarWrap').classList.add('hidden');
-      renderFeed(true);
-    };
-
-    // Notifications Drawer
-    document.getElementById('notifBtn').onclick = () => {
-      const alerts = allStories.filter((s) => s.isTrending).slice(0, 12);
-      const list = document.getElementById('notifList');
-      list.innerHTML = alerts.map((st, idx) => `
-        <div data-idx="${idx}" class="p-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 cursor-pointer">
-          <div class="text-[11px] text-indigo-400 font-semibold mb-1">${st.source} • ${st.category}</div>
-          <div class="text-xs font-bold text-white leading-snug">${st.title}</div>
-        </div>
-      `).join('');
-
-      list.querySelectorAll('[data-idx]').forEach((el) => {
-        el.onclick = () => {
-          const chosen = alerts[Number(el.dataset.idx)];
-          document.getElementById('notifModal').classList.add('hidden');
-          chosen.isTrending = true;
-          allStories = [chosen, ...allStories.filter((x) => x.id !== chosen.id)];
-          activeCategory = chosen.category === 'Podcasts' ? 'Podcasts' : 'General';
-          stateBarWrap.classList.add('hidden');
-          renderCategories();
-          renderFeed(true);
-        };
-      });
-
-      document.getElementById('notifModal').classList.remove('hidden');
-    };
-    document.getElementById('closeNotifBtn').onclick = () => {
-      document.getElementById('notifModal').classList.add('hidden');
-    };
-
-    document.getElementById('syncBtn').onclick = () => fetchNewsFeed(true);
+    function toggleAlertsModal() {
+      const modal = document.getElementById("alertsModal");
+      modal.classList.toggle("hidden");
+      if (!modal.classList.contains("hidden")) {
+        const list = document.getElementById("alertsList");
+        list.innerHTML = allStories.slice(0, 10).map((s) => `
+          <a href="${escapeHtml(s.link || "#")}" target="_blank" class="block p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800">
+            <div class="text-[11px] text-amber-400 font-semibold">${escapeHtml(s.source)} • ${timeAgo(s.pubDate)}</div>
+            <div class="text-xs font-bold text-white mt-0.5">${escapeHtml(s.title)}</div>
+          </a>
+        `).join("");
+      }
+    }
 
     // Boot
-    loadCachedStories();
-    renderCategories();
-    renderFeed(true);
-    fetchNewsFeed(false);
-    setInterval(() => fetchNewsFeed(false), 180000);
+    (function init() {
+      populateStatesDropdown();
+      renderCategories();
+      try {
+        const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "[]");
+        if (Array.isArray(cached) && cached.length > 0) {
+          allStories = cached;
+        }
+      } catch {}
+      renderFeed(true);
+      fetchFeed(false);
+      setInterval(() => fetchFeed(false), 180000);
+    })();
   </script>
 </body>
 </html>
