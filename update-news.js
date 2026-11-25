@@ -1,6 +1,6 @@
-import fs from 'fs';
-import Parser from 'rss-parser';
-import * as cheerio from 'cheerio';
+const fs = require('fs');
+const Parser = require('rss-parser');
+const cheerio = require('cheerio');
 
 const parser = new Parser({
   timeout: 12000,
@@ -28,76 +28,38 @@ const INDIAN_STATES = [
   'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
 ];
 
-const STATE_CITIES = {
-  'Andhra Pradesh': ['amaravati', 'visakhapatnam', 'vijayawada', 'tirupati', 'guntur'],
-  'Arunachal Pradesh': ['itanagar', 'tawang'],
-  'Assam': ['guwahati', 'dispur', 'dibrugarh', 'silchar'],
-  'Bihar': ['patna', 'gaya', 'muzaffarpur', 'bhagalpur'],
-  'Chhattisgarh': ['raipur', 'bilaspur', 'bastar'],
-  'Goa': ['panaji', 'margao', 'vasco'],
-  'Gujarat': ['ahmedabad', 'gandhinagar', 'surat', 'vadodara', 'rajkot'],
-  'Haryana': ['gurugram', 'faridabad', 'ambala', 'hisar'],
-  'Himachal Pradesh': ['shimla', 'manali', 'dharamshala'],
-  'Jharkhand': ['ranchi', 'jamshedpur', 'dhanbad'],
-  'Karnataka': ['bengaluru', 'bangalore', 'mysuru', 'mangaluru', 'hubballi'],
-  'Kerala': ['thiruvananthapuram', 'kochi', 'kozhikode', 'thrissur'],
-  'Madhya Pradesh': ['bhopal', 'indore', 'gwalior', 'jabalpur'],
-  'Maharashtra': ['mumbai', 'pune', 'nagpur', 'nashik', 'thane'],
-  'Manipur': ['imphal'],
-  'Meghalaya': ['shillong'],
-  'Mizoram': ['aizawl'],
-  'Nagaland': ['kohima', 'dimapur'],
-  'Odisha': ['bhubaneswar', 'cuttack', 'puri', 'rourkela', 'sambalpur'],
-  'Punjab': ['amritsar', 'ludhiana', 'jalandhar', 'patiala'],
-  'Rajasthan': ['jaipur', 'jodhpur', 'udaipur', 'kota'],
-  'Sikkim': ['gangtok'],
-  'Tamil Nadu': ['chennai', 'coimbatore', 'madurai', 'trichy', 'salem'],
-  'Telangana': ['hyderabad', 'warangal', 'nizamabad', 'karimnagar'],
-  'Tripura': ['agartala'],
-  'Uttar Pradesh': ['lucknow', 'varanasi', 'kanpur', 'agra', 'noida', 'prayagraj'],
-  'Uttarakhand': ['dehradun', 'haridwar', 'nainital'],
-  'West Bengal': ['kolkata', 'howrah', 'darjeeling', 'siliguri', 'durgapur']
-};
-
-const CATEGORY_FEEDS = [
-  // Top Trending (General Front-Page Highlights)
-  { url: 'https://feeds.feedburner.com/ndtvnews-top-stories', category: 'General', source: 'NDTV Top Stories', limit: 6, isTrending: true },
-  { url: 'https://timesofindia.indiatimes.com/rssfeedstopstories.cms', category: 'General', source: 'Times of India', limit: 6, isTrending: true },
-
-  // India National
-  { url: 'https://www.thehindu.com/news/national/feeder/default.rss', category: 'India National', source: 'The Hindu', limit: 10, isTrending: true },
-  { url: 'https://feeds.feedburner.com/ndtvnews-india-news', category: 'India National', source: 'NDTV India', limit: 10, isTrending: false },
-  { url: 'https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms', category: 'India National', source: 'Times of India', limit: 8, isTrending: false },
-
-  // World
-  { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', category: 'World', source: 'BBC World', limit: 10, isTrending: true },
-  { url: 'https://www.aljazeera.com/xml/rss/all.xml', category: 'World', source: 'Al Jazeera', limit: 10, isTrending: false },
-  { url: 'https://feeds.feedburner.com/ndtvnews-world-news', category: 'World', source: 'NDTV World', limit: 8, isTrending: false },
-
-  // Politics
-  { url: 'https://news.google.com/rss/search?q=Indian+Politics+Parliament+Cabinet+Election+when:2d&hl=en-IN&gl=IN&ceid=IN:en', category: 'Politics', source: 'India Politics Desk', limit: 12, isTrending: true },
-  { url: 'https://www.thehindu.com/news/national/feeder/default.rss', category: 'Politics', source: 'The Hindu Politics', limit: 8, isTrending: false },
-
-  // Sports
-  { url: 'https://feeds.bbci.co.uk/sport/rss.xml', category: 'Sports', source: 'BBC Sport', limit: 10, isTrending: true },
-  { url: 'https://feeds.feedburner.com/ndtvsports-latest', category: 'Sports', source: 'NDTV Sports', limit: 10, isTrending: false },
-  { url: 'https://timesofindia.indiatimes.com/rssfeeds/4719148.cms', category: 'Sports', source: 'TOI Sports', limit: 8, isTrending: false },
-
-  // Entertainment
-  { url: 'https://www.bollywoodhungama.com/rss/news.xml', category: 'Entertainment', source: 'Bollywood Hungama', limit: 10, isTrending: true },
-  { url: 'https://timesofindia.indiatimes.com/rssfeeds/1081479906.cms', category: 'Entertainment', source: 'TOI Entertainment', limit: 10, isTrending: false },
-  { url: 'https://feeds.feedburner.com/ndtvmovies-latest', category: 'Entertainment', source: 'NDTV Movies', limit: 8, isTrending: false }
+const CORE_FEEDS = [
+  { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', category: 'World', source: 'BBC World' },
+  { url: 'https://www.aljazeera.com/xml/rss/all.xml', category: 'World', source: 'Al Jazeera' },
+  { url: 'https://www.thehindu.com/news/national/feeder/default.rss', category: 'India National', source: 'The Hindu' },
+  { url: 'https://feeds.feedburner.com/ndtvnews-india-news', category: 'India National', source: 'NDTV' },
+  { url: 'https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms', category: 'India National', source: 'Times of India' },
+  { url: 'https://www.thehindu.com/news/national/feeder/default.rss', category: 'Politics', source: 'The Hindu' },
+  { url: 'https://feeds.feedburner.com/ndtvnews-india-news', category: 'Politics', source: 'NDTV Politics' },
+  { url: 'https://news.google.com/rss/search?q=India+Politics+Parliament+Supreme+Court+Government+when:1d&hl=en-IN&gl=IN&ceid=IN:en', category: 'Politics', source: 'India Politics Desk' },
+  { url: 'https://feeds.bbci.co.uk/sport/rss.xml', category: 'Sports', source: 'BBC Sport' },
+  { url: 'https://feeds.feedburner.com/ndtvsports-latest', category: 'Sports', source: 'NDTV Sports' },
+  { url: 'https://www.bollywoodhungama.com/rss/news.xml', category: 'Entertainment', source: 'Bollywood Hungama' },
+  { url: 'https://timesofindia.indiatimes.com/rssfeeds/1081479906.cms', category: 'Entertainment', source: 'TOI Entertainment' }
 ];
 
-// Genuine Long-Form Podcasts ONLY (No wire news Shorts)
 const PODCAST_FEEDS = [
-  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCzwCEE_PchiBULMnAJqhGVg', source: 'Raj Shamani • Figuring Out' },
-  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCneyi-aYq4VIBYIAQgWmk_w', source: 'Ranveer Allahbadia • TRS' },
-  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCnC8SAZzQiB2XlFBwpMq17g', source: 'Nikhil Kamath • WTF is' },
-  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCSHZKyawb77ixDdsGog4iWA', source: 'Lex Fridman Podcast' },
+  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCt4t-jeY85JegMlZ-E5UWtA', source: 'Aaj Tak Podcast' },
+  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC6RJ7-PaXg6TIH2BzZfTV7w', source: 'Times Now Podcast' },
+  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCYPvAwZP8pZhSMW8qs7cVCw', source: 'India Today Podcast' },
+  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCSHZKyawb77ixDdsGog4iWA', source: 'Lex Fridman' },
   { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC2D2CMWXMOVWx7giW1n3LIg', source: 'Huberman Lab' },
-  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCGq-a57w-aPwyi3pW7XLiHw', source: 'The Diary Of A CEO' }
+  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCGq-a57w-aPwyi3pW7XLiHw', source: 'Diary Of A CEO' },
+  { url: 'https://news.google.com/rss/search?q="Raj+Shamani"+OR+"Nikhil+Kamath"+OR+"Ranveer+Allahbadia"+podcast+when:3d&hl=en-IN&gl=IN&ceid=IN:en', source: 'India Podcasts' }
 ];
+
+function stripPublisherSuffix(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/\s+[-–|]\s*(The Times of India|Times of India|India Today|The New Indian Express|NDTV|The Hindu|Hindustan Times|Indian Express|ANI|PTI|Deccan Chronicle|Telangana Today|The Hans India|News18|Firstpost|Mint|Business Standard|LiveMint)\.?\s*$/i, '')
+    .replace(/\s+(The Times of India|Times of India|India Today|The New Indian Express|NDTV|The Hindu|Hindustan Times|Indian Express)\.?\s*$/i, '')
+    .trim();
+}
 
 function cleanRawNoise(text) {
   if (!text) return '';
@@ -107,7 +69,10 @@ function cleanRawNoise(text) {
     .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '')
     .replace(/Account subscription benefits alongside Premium Stories[\s\S]*?Subscription/gi, '')
     .replace(/Updated\s*-\s*[A-Za-z]+\s+\d+,\s*\d{4}\s+\d+:\d+\s*(?:am|pm)\s*IST\s*-?/gi, '')
-    .replace(/^[A-Z]{3,}\s+(?=The\s)/, '')
+    .replace(/Get your hand-picked playbook[\s\S]*?(?=Disclaimer:|$)/gi, '')
+    .replace(/Guest Suggestion Form:[\s\S]*?(?=Disclaimer:|$)/gi, '')
+    .replace(/Design Your Own Podcast Episode:[\s\S]*?(?=Disclaimer:|$)/gi, '')
+    .replace(/Disclaimer:\s*This video is intended solely[\s\S]*$/gi, '')
     .replace(/Email to:.*$/gis, '')
     .replace(/Copyrights?\s*©.*$/gis, '')
     .replace(/All Rights Reserved.*$/gis, '')
@@ -117,51 +82,40 @@ function cleanRawNoise(text) {
     .trim();
 }
 
-function upgradeToHdImage(url) {
-  if (!url || typeof url !== 'string') return '';
+function isValidPhotoUrl(url) {
+  if (!url || typeof url !== 'string') return false;
   const u = url.toLowerCase();
-  if (!u.startsWith('http')) return '';
-  if (u.includes('lh3.googleusercontent.com') || u.includes('gstatic.com')) return '';
-  if (u.includes('th-online') || u.includes('default-article') || u.includes('placeholder') || u.includes('logo') || u.includes('1x1')) return '';
-
-  return url
-    .replace(/([?&])(w|width|h|height|quality|q)=\d+/gi, '')
-    .replace(/resize=\d+[,x]\d+/gi, 'resize=1200,675')
-    .replace(/-\d{2,3}x\d{2,3}(\.(?:jpg|jpeg|png|webp))/gi, '$1')
-    .replace(/\/(sddefault|mqdefault|default)\.jpg/i, '/hqdefault.jpg')
-    .replace(/[?&]+$/, '');
+  if (!u.startsWith('http')) return false;
+  if (u.includes('lh3.googleusercontent.com') || u.includes('gstatic.com')) return false;
+  if (u.includes('th-online') || u.includes('default-article') || u.includes('placeholder') || u.includes('logo')) return false;
+  return true;
 }
 
 function extractRssImage(item) {
-  const link = item.link || '';
-  const ytMatch = link.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  if (ytMatch) {
-    return `https://i.ytimg.com/vi/${ytMatch[1]}/hqdefault.jpg`;
-  }
-  if (item.enclosure && item.enclosure.url) {
-    const hd = upgradeToHdImage(item.enclosure.url);
-    if (hd) return hd;
+  if (item.enclosure && item.enclosure.url && isValidPhotoUrl(item.enclosure.url)) {
+    return item.enclosure.url;
   }
   if (Array.isArray(item.mediaContent)) {
     for (const m of item.mediaContent) {
-      const hd = upgradeToHdImage(m?.$?.url || m?.url);
-      if (hd) return hd;
+      const u = m?.$?.url || m?.url;
+      if (isValidPhotoUrl(u)) return u;
     }
   }
-  if (item.mediaThumbnail?.$?.url) {
-    const hd = upgradeToHdImage(item.mediaThumbnail.$.url);
-    if (hd) return hd;
+  if (item.mediaThumbnail?.$?.url && isValidPhotoUrl(item.mediaThumbnail.$.url)) {
+    return item.mediaThumbnail.$.url;
   }
   if (item.mediaGroup?.['media:thumbnail']?.[0]?.$?.url) {
-    const hd = upgradeToHdImage(item.mediaGroup['media:thumbnail'][0].$.url);
-    if (hd) return hd;
+    return item.mediaGroup['media:thumbnail'][0].$.url;
+  }
+  const link = item.link || '';
+  const ytMatch = link.match(/(?:v=|youtu\.be\/|shorts\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) {
+    // Use 16:9 widescreen maxresdefault (fallback handled in index.html onerror to hqdefault)
+    return `https://i.ytimg.com/vi/${ytMatch[1]}/maxresdefault.jpg`;
   }
   const html = item['content:encoded'] || item.content || '';
   const imgMatch = html.match(/<img[^>]+src=["']([^"']+)["']/i);
-  if (imgMatch) {
-    const hd = upgradeToHdImage(imgMatch[1]);
-    if (hd) return hd;
-  }
+  if (imgMatch && isValidPhotoUrl(imgMatch[1])) return imgMatch[1];
   return '';
 }
 
@@ -171,18 +125,18 @@ async function fetchArticleDetails(url) {
   }
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6500);
+    const timer = setTimeout(() => controller.abort(), 7000);
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36' }
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Pulse50Bot/1.0)' }
     });
     clearTimeout(timer);
     if (!res.ok) return { text: '', image: '' };
     const html = await res.text();
     const $ = cheerio.load(html);
 
-    const rawOg = $('meta[property="og:image"]').attr('content') || $('meta[name="twitter:image"]').attr('content') || '';
-    const image = upgradeToHdImage(rawOg);
+    let ogImg = $('meta[property="og:image"]').attr('content') || $('meta[name="twitter:image"]').attr('content') || '';
+    if (!isValidPhotoUrl(ogImg)) ogImg = '';
 
     const paragraphs = [];
     $('article p, .story-element-text p, .articlebodycontent p, main p').each((_, el) => {
@@ -192,21 +146,29 @@ async function fetchArticleDetails(url) {
       }
     });
 
-    return { text: paragraphs.slice(0, 5).join(' '), image };
+    return { text: paragraphs.slice(0, 5).join(' '), image: ogImg };
   } catch {
     return { text: '', image: '' };
   }
 }
 
-function enforceCleanCompleteSummary(rawText, headline) {
-  let text = cleanRawNoise(rawText);
-  if (!text) return '';
+function isSnippetJustHeadline(snippet, headline) {
+  const norm = (s) => stripPublisherSuffix(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+  const a = norm(snippet);
+  const b = norm(headline);
+  if (!a || !b) return true;
+  return a === b || a.startsWith(b) || b.startsWith(a);
+}
 
-  const cleanHead = headline.replace(/[^\w\s]/g, '').toLowerCase().trim();
+function enforceCleanCompleteSummary(rawText, headline) {
+  let text = stripPublisherSuffix(cleanRawNoise(rawText));
+  if (!text || isSnippetJustHeadline(text, headline)) return '';
+
+  const cleanHead = stripPublisherSuffix(headline).replace(/[^\w\s]/g, '').toLowerCase().trim();
   const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
   const filtered = sentences.filter((s) => {
-    const cleanS = s.replace(/[^\w\s]/g, '').toLowerCase().trim();
-    return cleanS && cleanS !== cleanHead && !cleanHead.includes(cleanS);
+    const cleanS = stripPublisherSuffix(s).replace(/[^\w\s]/g, '').toLowerCase().trim();
+    return cleanS && cleanS !== cleanHead && !cleanHead.includes(cleanS) && !cleanS.startsWith(cleanHead);
   });
 
   let result = '';
@@ -232,40 +194,49 @@ function enforceCleanCompleteSummary(rawText, headline) {
   return result;
 }
 
-async function rewriteWithGemini(headline, contextText, isPodcast) {
-  if (!GEMINI_API_KEY) return enforceCleanCompleteSummary(contextText, headline);
-
-  const prompt = isPodcast
-    ? `Summarize the core topic, guest perspective, and key takeaway of this podcast episode in 45 to 50 words. Do NOT write a generic bio or include emails, links, or channel promos. End with a complete sentence and period.\nEpisode Title: ${headline}\nNotes: ${contextText.slice(0, 900)}`
-    : `Rewrite this news report into a neutral, informative, complete 45 to 50 word gist. Do NOT repeat the headline word-for-word, do NOT include publisher names, and end with a complete sentence and period.\nHeadline: ${headline}\nArticle: ${contextText.slice(0, 1200)}`;
-
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.3, maxOutputTokens: 140 }
-        })
-      }
-    );
-    if (!res.ok) return enforceCleanCompleteSummary(contextText, headline);
-    const data = await res.json();
-    const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const finalized = enforceCleanCompleteSummary(aiText, headline);
-    return finalized.split(/\s+/).length >= 18 ? finalized : enforceCleanCompleteSummary(contextText, headline);
-  } catch {
-    return enforceCleanCompleteSummary(contextText, headline);
+async function rewriteWithGemini(headline, contextText, isPodcast, regionHint = '') {
+  const titleOnly = isSnippetJustHeadline(contextText, headline);
+  if (!GEMINI_API_KEY) {
+    return titleOnly ? '' : enforceCleanCompleteSummary(contextText, headline);
   }
-}
 
-function matchesActualState(text, targetState) {
-  const lower = text.toLowerCase();
-  if (lower.includes(targetState.toLowerCase())) return true;
-  const cities = STATE_CITIES[targetState] || [];
-  return cities.some((c) => new RegExp(`\\b${c}\\b`, 'i').test(lower));
+  let prompt = '';
+  if (isPodcast) {
+    prompt = `Write a sharp, informative 45 to 50 word summary explaining the core topic, guest insights, and key takeaway of this podcast episode. Never include YouTube links, playbooks, forms, emails, hashtags, or disclaimers. Write complete grammatical sentences ending with a period.\nEpisode Title: ${headline}\nNotes: ${contextText.slice(0, 800)}`;
+  } else if (titleOnly) {
+    prompt = `You are a senior Indian news editor. Based on this verified news headline${regionHint ? ` from ${regionHint}` : ''}, write a clear, factual, meaningful 45 to 50 word news brief explaining the policy/political background, key stakeholders, and impact. CRITICAL: Do NOT repeat or copy the headline text, and do NOT append publisher names like "The Times of India" or "India Today". End with a complete sentence and period.\nHeadline: ${headline}`;
+  } else {
+    prompt = `Rewrite this news report into a clear, factual, meaningful 45 to 50 word news brief. CRITICAL: Do NOT copy or repeat the headline word-for-word, and do NOT include publisher names, subscription prompts, or cut-off sentences. End with a complete sentence and period.\nHeadline: ${headline}\nArticle Details: ${contextText.slice(0, 1200)}`;
+  }
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.35, maxOutputTokens: 150 }
+          })
+        }
+      );
+      if (res.status === 429) {
+        await sleep(3500);
+        continue;
+      }
+      if (!res.ok) break;
+      const data = await res.json();
+      const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const finalized = enforceCleanCompleteSummary(aiText, headline);
+      if (finalized && finalized.split(/\s+/).length >= 22) return finalized;
+    } catch {
+      await sleep(1500);
+    }
+  }
+
+  return titleOnly ? '' : enforceCleanCompleteSummary(contextText, headline);
 }
 
 async function main() {
@@ -279,26 +250,22 @@ async function main() {
     return false;
   }
 
-  // 1. Deep Category Feeds + Top Trending Front-Page Selection
-  for (const feed of CATEGORY_FEEDS) {
+  // 1. Core News Categories
+  for (const feed of CORE_FEEDS) {
     try {
       const parsed = await parser.parseURL(feed.url);
-      let addedForFeed = 0;
-      for (const item of (parsed.items || []).slice(0, feed.limit)) {
-        const title = cleanRawNoise((item.title || '').replace(/\s+-\s+[^-]+$/, ''));
+      for (const item of (parsed.items || []).slice(0, 6)) {
+        const title = stripPublisherSuffix(cleanRawNoise(item.title || ''));
         if (!title || title.length < 15 || isDuplicate(title)) continue;
 
         let image = extractRssImage(item);
         const rssSnippet = cleanRawNoise(item.contentSnippet || item.content || '');
         const scraped = await fetchArticleDetails(item.link);
-        if (scraped.image) image = scraped.image;
+        if (!image && scraped.image) image = scraped.image;
 
         const sourceText = scraped.text || rssSnippet;
-        const summary = await rewriteWithGemini(title, sourceText, false);
-        if (!summary || summary.split(/\s+/).length < 15) continue;
-
-        const isTrending = feed.isTrending && addedForFeed < 3;
-        addedForFeed++;
+        const summary = await rewriteWithGemini(title, sourceText, false, 'India');
+        if (!summary || summary.split(/\s+/).length < 20) continue;
 
         stories.push({
           id: Buffer.from(title).toString('base64').slice(0, 24),
@@ -306,105 +273,93 @@ async function main() {
           summary,
           source: feed.source,
           category: feed.category,
-          isTrending,
+          tags: ['General', feed.category],
           state: '',
           image,
           url: item.link || '',
           videoUrl: '',
           pubDate: item.isoDate ? new Date(item.isoDate).getTime() : Date.now()
         });
-        await sleep(1200);
+        await sleep(1400);
       }
     } catch (e) {
-      console.error('Category feed error:', feed.url, e.message);
+      console.error('Feed error:', feed.url, e.message);
     }
   }
 
-  // 2. Genuine Long-Form Podcasts ONLY (Block YouTube Shorts & LIVE wire clips)
+  // 2. Podcasts
   for (const pod of PODCAST_FEEDS) {
     try {
       const parsed = await parser.parseURL(pod.url);
-      let podCount = 0;
-      for (const item of parsed.items || []) {
-        if (podCount >= 3) break;
-        const link = item.link || '';
-        const rawTitle = item.title || '';
-        if (link.includes('/shorts/') || /#shorts|\blive:/i.test(rawTitle)) continue;
-
-        const title = cleanRawNoise(rawTitle.replace(/\s+-\s+[^-]+$/, ''));
+      for (const item of (parsed.items || []).slice(0, 3)) {
+        const title = stripPublisherSuffix(cleanRawNoise(item.title || ''));
         if (!title || title.length < 15 || isDuplicate(title)) continue;
 
         const image = extractRssImage(item);
         const rawDesc = cleanRawNoise(item.mediaGroup?.['media:description']?.[0] || item.contentSnippet || '');
-        const summary = await rewriteWithGemini(title, rawDesc || title, true);
-        if (!summary || summary.split(/\s+/).length < 15) continue;
+        const summary = await rewriteWithGemini(title, rawDesc || title, true, 'Podcast');
+        if (!summary || summary.split(/\s+/).length < 20) continue;
 
-        podCount++;
         stories.push({
           id: Buffer.from(title).toString('base64').slice(0, 24),
           title,
           summary,
           source: pod.source,
           category: 'Podcasts',
-          isTrending: false,
+          tags: ['Podcasts'],
           state: '',
           image,
-          url: link,
-          videoUrl: link,
+          url: item.link || '',
+          videoUrl: item.link || '',
           pubDate: item.isoDate ? new Date(item.isoDate).getTime() : Date.now()
         });
-        await sleep(1200);
+        await sleep(1400);
       }
     } catch (e) {
       console.error('Podcast error:', pod.url, e.message);
     }
   }
 
-  // 3. Dedicated Domestic News for All 28 Indian States (Strict Content Verification)
+  // 3. All 28 Indian States (Title-aware Gemini expansion prevents headline copy-paste)
   for (const stateName of INDIAN_STATES) {
-    const q = encodeURIComponent(`"${stateName}" government OR chief minister OR news`);
+    const q = encodeURIComponent(`${stateName} government OR chief minister OR news`);
     const stateUrl = `https://news.google.com/rss/search?q=${q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en`;
     try {
       const parsed = await parser.parseURL(stateUrl);
-      let stateCount = 0;
-      for (const item of (parsed.items || []).slice(0, 5)) {
-        if (stateCount >= 3) break;
+      for (const item of (parsed.items || []).slice(0, 2)) {
         const rawTitle = item.title || '';
-        const sourceMatch = rawTitle.match(/\s+-\s+([^-]+)$/);
+        const sourceMatch = rawTitle.match(/\s+[-–|]\s+([^-–|]+)$/);
         const pubSource = sourceMatch ? sourceMatch[1].trim() : `${stateName} Desk`;
-        const title = cleanRawNoise(rawTitle.replace(/\s+-\s+[^-]+$/, ''));
+        const title = stripPublisherSuffix(cleanRawNoise(rawTitle));
         if (!title || title.length < 15 || isDuplicate(title)) continue;
 
         const snippet = cleanRawNoise(item.contentSnippet || item.content || '');
-        if (!matchesActualState(`${title} ${snippet}`, stateName)) continue;
+        const summary = await rewriteWithGemini(title, snippet, false, stateName);
+        if (!summary || summary.split(/\s+/).length < 20) continue;
 
-        const summary = await rewriteWithGemini(title, snippet || `${title} in ${stateName}.`, false);
-        if (!summary || summary.split(/\s+/).length < 12) continue;
-
-        stateCount++;
         stories.push({
           id: Buffer.from(title).toString('base64').slice(0, 24),
           title,
           summary,
           source: pubSource,
           category: 'India States',
-          isTrending: false,
+          tags: ['India States'],
           state: stateName,
           image: extractRssImage(item),
           url: item.link || '',
           videoUrl: '',
           pubDate: item.isoDate ? new Date(item.isoDate).getTime() : Date.now()
         });
-        await sleep(1100);
+        await sleep(1400);
       }
     } catch (e) {
       console.error('State error:', stateName, e.message);
     }
   }
 
-  if (stories.length >= 30) {
+  if (stories.length >= 25) {
     fs.writeFileSync('news.json', JSON.stringify(stories, null, 2));
-    console.log(`Saved ${stories.length} stories across General Trending, Categories, Podcasts & 28 States.`);
+    console.log(`Saved ${stories.length} clean stories to news.json`);
   } else {
     console.error(`Too few stories (${stories.length}); preserving existing news.json`);
     process.exit(1);
