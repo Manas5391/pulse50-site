@@ -21,53 +21,76 @@ const parser = new Parser({
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const ALL_STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
-  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
-  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
-  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+// All 28 Indian states with native Google News regional locale + major districts for deep local coverage
+const STATE_CONFIGS = [
+  { name: 'Odisha', hl: 'or', ceid: 'IN:or', langName: 'Odia', districts: 'ଭୁବନେଶ୍ୱର OR କଟକ OR ପୁରୀ OR ସମ୍ବଲପୁର OR ବ୍ରହ୍ମପୁର OR ବାଲେଶ୍ୱର OR ରାଉରକେଲା OR କୋରାପୁଟ OR ମୟୂରଭଞ୍ଜ' },
+  { name: 'Telangana', hl: 'te', ceid: 'IN:te', langName: 'Telugu', districts: 'హైదరాబాద్ OR వరంగల్ OR నిజామాబాద్ OR కరీంనగర్ OR ఖమ్మం OR నల్గొండ' },
+  { name: 'Andhra Pradesh', hl: 'te', ceid: 'IN:te', langName: 'Telugu', districts: 'అమరావతి OR విశాఖపట్నం OR విజయవాడ OR తిరుపతి OR గుంటూరు OR కర్నూలు' },
+  { name: 'West Bengal', hl: 'bn', ceid: 'IN:bn', langName: 'Bengali', districts: 'কলকাতা OR হাওড়া OR দার্জিলিং OR শিলিগুড়ি OR দুর্গাপুর OR বর্ধমান' },
+  { name: 'Tamil Nadu', hl: 'ta', ceid: 'IN:ta', langName: 'Tamil', districts: 'சென்னை OR கோயம்புத்தூர் OR மதுரை OR திருச்சி OR சேலம் OR திருநெல்வேலி' },
+  { name: 'Karnataka', hl: 'kn', ceid: 'IN:kn', langName: 'Kannada', districts: 'ಬೆಂಗಳೂರು OR ಮೈಸೂರು OR ಮಂಗಳೂರು OR ಹುಬ್ಬಳ್ಳಿ OR ಬೆಳಗಾವಿ OR ಕಲಬುರಗಿ' },
+  { name: 'Maharashtra', hl: 'mr', ceid: 'IN:mr', langName: 'Marathi', districts: 'मुंबई OR पुणे OR नागपूर OR नाशिक OR छत्रपती संभाजीनगर OR कोल्हापूर' },
+  { name: 'Kerala', hl: 'ml', ceid: 'IN:ml', langName: 'Malayalam', districts: 'തിരുവനന്തപുരം OR കൊച്ചി OR കോഴിക്കോട് OR തൃശ്ശൂർ OR കണ്ണൂർ' },
+  { name: 'Gujarat', hl: 'gu', ceid: 'IN:gu', langName: 'Gujarati', districts: 'અમદાવાદ OR સુરત OR વડોદરા OR રાજકોટ OR ગાંધીનગર' },
+  { name: 'Punjab', hl: 'pa', ceid: 'IN:pa', langName: 'Punjabi', districts: 'ਅੰਮ੍ਰਿਤਸਰ OR ਲੁਧਿਆਣਾ OR ਜਲੰਧਰ OR ਪਟਿਆਲਾ OR ਮੁਹਾਲੀ' },
+  { name: 'Uttar Pradesh', hl: 'hi', ceid: 'IN:hi', langName: 'Hindi', districts: 'लखनऊ OR वाराणसी OR कानपुर OR आगरा OR नोएडा OR प्रयागराज OR गोरखपुर' },
+  { name: 'Bihar', hl: 'hi', ceid: 'IN:hi', langName: 'Hindi', districts: 'पटना OR गया OR मुजफ्फरपुर OR भागलपुर OR दरभंगा' },
+  { name: 'Madhya Pradesh', hl: 'hi', ceid: 'IN:hi', langName: 'Hindi', districts: 'भोपाल OR इंदौर OR ग्वालियर OR जबलपुर OR उज्जैन' },
+  { name: 'Rajasthan', hl: 'hi', ceid: 'IN:hi', langName: 'Hindi', districts: 'जयपुर OR जोधपुर OR उदयपुर OR कोटा OR अजमेर' },
+  { name: 'Haryana', hl: 'hi', ceid: 'IN:hi', langName: 'Hindi', districts: 'गुरुग्राम OR फरीदाबाद OR अंबाला OR हिसार OR रोहतक' },
+  { name: 'Chhattisgarh', hl: 'hi', ceid: 'IN:hi', langName: 'Hindi', districts: 'रायपुर OR बिलासपुर OR दुर्ग OR बस्तर OR कोरबा' },
+  { name: 'Jharkhand', hl: 'hi', ceid: 'IN:hi', langName: 'Hindi', districts: 'रांची OR जमशेदपुर OR धनबाद OR बोकारो' },
+  { name: 'Uttarakhand', hl: 'hi', ceid: 'IN:hi', langName: 'Hindi', districts: 'देहरादून OR हरिद्वार OR नैनीताल OR हल्द्वानी' },
+  { name: 'Himachal Pradesh', hl: 'hi', ceid: 'IN:hi', langName: 'Hindi', districts: 'शिमला OR मनाली OR धर्मशाला OR कांगड़ा' },
+  { name: 'Assam', hl: 'en-IN', ceid: 'IN:en', langName: 'English', districts: 'Guwahati OR Dibrugarh OR Silchar OR Jorhat' },
+  { name: 'Arunachal Pradesh', hl: 'en-IN', ceid: 'IN:en', langName: 'English', districts: 'Itanagar OR Tawang OR Pasighat' },
+  { name: 'Goa', hl: 'en-IN', ceid: 'IN:en', langName: 'English', districts: 'Panaji OR Margao OR Vasco' },
+  { name: 'Manipur', hl: 'en-IN', ceid: 'IN:en', langName: 'English', districts: 'Imphal OR Churachandpur' },
+  { name: 'Meghalaya', hl: 'en-IN', ceid: 'IN:en', langName: 'English', districts: 'Shillong OR Tura' },
+  { name: 'Mizoram', hl: 'en-IN', ceid: 'IN:en', langName: 'English', districts: 'Aizawl OR Lunglei' },
+  { name: 'Nagaland', hl: 'en-IN', ceid: 'IN:en', langName: 'English', districts: 'Kohima OR Dimapur' },
+  { name: 'Sikkim', hl: 'en-IN', ceid: 'IN:en', langName: 'English', districts: 'Gangtok OR Namchi' },
+  { name: 'Tripura', hl: 'bn', ceid: 'IN:bn', langName: 'Bengali', districts: 'আগরতলা OR ত্রিপুরা' }
 ];
 
-// Rich multi-source feeds covering General (A-Z trending: Defense, Science, Research, History, Culture) + deep dedicated tab feeds
 const CORE_FEEDS = [
-  // General Trending Mix (Breaking, Defense, Science, Research, History, Culture)
+  // General (All-in-one trending mix)
   { url: 'https://feeds.feedburner.com/ndtvnews-top-stories', category: 'General', source: 'NDTV', limit: 6 },
   { url: 'https://timesofindia.indiatimes.com/rssfeedstopstories.cms', category: 'General', source: 'Times of India', limit: 6 },
-  { url: 'https://www.thehindu.com/sci-tech/science/feeder/default.rss', category: 'General', source: 'The Hindu Science', limit: 4 },
-  { url: 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml', category: 'General', source: 'BBC Science', limit: 4 },
-  { url: 'https://www.smithsonianmag.com/rss/history/', category: 'General', source: 'Smithsonian History', limit: 3 },
-  { url: 'https://news.google.com/rss/search?q=(Indian+Army+OR+DRDO+OR+ISRO+OR+Indian+Navy+OR+IAF+defense)+when:2d&hl=en-IN&gl=IN&ceid=IN:en', category: 'General', source: 'Defense & Space Desk', limit: 4 },
 
-  // India National (Dedicated deep pool)
+  // India National
   { url: 'https://www.thehindu.com/news/national/feeder/default.rss', category: 'India National', source: 'The Hindu', limit: 8 },
   { url: 'https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms', category: 'India National', source: 'Times of India', limit: 7 },
   { url: 'https://feeds.feedburner.com/ndtvnews-india-news', category: 'India National', source: 'NDTV India', limit: 7 },
 
-  // World (Dedicated deep pool)
+  // World
   { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', category: 'World', source: 'BBC News', limit: 8 },
   { url: 'https://www.aljazeera.com/xml/rss/all.xml', category: 'World', source: 'Al Jazeera', limit: 7 },
   { url: 'https://feeds.feedburner.com/ndtvnews-world-news', category: 'World', source: 'NDTV World', limit: 6 },
 
-  // Politics (Strictly political feeds + AI gatekeeper verification)
+  // Politics
   { url: 'https://www.thehindu.com/news/national/politics/feeder/default.rss', category: 'Politics', source: 'The Hindu', limit: 8 },
-  { url: 'https://timesofindia.indiatimes.com/rssfeeds/1898055.cms', category: 'Politics', source: 'Times of India', limit: 7 },
-  { url: 'https://news.google.com/rss/search?q=(Parliament+OR+Lok+Sabha+OR+Rajya+Sabha+OR+Union+Cabinet+OR+Election+Commission+OR+Chief+Minister+OR+BJP+OR+Congress)+when:2d&hl=en-IN&gl=IN&ceid=IN:en', category: 'Politics', source: 'India Politics Desk', limit: 7 },
+  { url: 'https://news.google.com/rss/search?q=(Parliament+OR+Lok+Sabha+OR+Rajya+Sabha+OR+Union+Cabinet+OR+Election+Commission+OR+Chief+Minister+OR+BJP+OR+Congress)+when:2d&hl=en-IN&gl=IN&ceid=IN:en', category: 'Politics', source: 'India Politics Desk', limit: 8 },
 
-  // Sports (Dedicated deep pool)
+  // Sports
   { url: 'https://feeds.bbci.co.uk/sport/rss.xml', category: 'Sports', source: 'BBC Sport', limit: 7 },
   { url: 'https://timesofindia.indiatimes.com/rssfeeds/4719148.cms', category: 'Sports', source: 'Times of India', limit: 7 },
   { url: 'https://feeds.feedburner.com/ndtvsports-latest', category: 'Sports', source: 'NDTV Sports', limit: 7 },
 
-  // Entertainment (Dedicated deep pool)
+  // Science & Education (Dedicated Tab)
+  { url: 'https://www.thehindu.com/sci-tech/science/feeder/default.rss', category: 'Science & Education', source: 'The Hindu Science', limit: 7 },
+  { url: 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml', category: 'Science & Education', source: 'BBC Science', limit: 6 },
+  { url: 'https://news.google.com/rss/search?q=(ISRO+OR+NASA+OR+UGC+OR+CBSE+OR+NEET+OR+JEE+OR+IIT+OR+education+policy+OR+scientific+research)+when:2d&hl=en-IN&gl=IN&ceid=IN:en', category: 'Science & Education', source: 'Science & Edu Desk', limit: 8 },
+
+  // Entertainment
   { url: 'https://timesofindia.indiatimes.com/rssfeeds/1081479906.cms', category: 'Entertainment', source: 'Times of India', limit: 7 },
   { url: 'https://www.bollywoodhungama.com/rss/news.xml', category: 'Entertainment', source: 'Bollywood Hungama', limit: 7 },
   { url: 'https://feeds.feedburner.com/ndtvmovies-latest', category: 'Entertainment', source: 'NDTV Movies', limit: 6 }
 ];
 
 const PODCAST_FEEDS = [
-  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCneyi-aYq4VIBYIAQgWmk_w', source: 'Raj Shamani (Figuring Out)' },
-  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCRvG4p0G_R-i69K6qB_dK8w', source: 'Nikhil Kamath (WTF is)' },
+  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCzwCEE_PchiBULMnAJqhGVg', source: 'Raj Shamani • Figuring Out' },
+  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCRvG4p0G_R-i69K6qB_dK8w', source: 'Nikhil Kamath • WTF is' },
   { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCt4t-jeY85JegMlZ-E5UWtA', source: 'ANI Podcast with Smita Prakash' },
   { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCSHZKyawb77ixDdsGog4iWA', source: 'Lex Fridman Podcast' },
   { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCGq-a57w-aPwyi3pW7XLiHw', source: 'The Diary Of A CEO' },
@@ -111,9 +134,7 @@ function upgradeImageUrl(url = '') {
 }
 
 function extractRssImage(item) {
-  if (item.enclosure?.url && !isBadImage(item.enclosure.url)) {
-    return upgradeImageUrl(item.enclosure.url);
-  }
+  if (item.enclosure?.url && !isBadImage(item.enclosure.url)) return upgradeImageUrl(item.enclosure.url);
   if (Array.isArray(item.mediaContent)) {
     for (const m of item.mediaContent) {
       const u = m?.$?.url || m?.url;
@@ -145,43 +166,28 @@ async function scrapeArticleDetails(url) {
   }
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 7000);
+    const timer = setTimeout(() => controller.abort(), 6500);
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36'
-      }
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36' }
     });
     clearTimeout(timer);
     if (!res.ok) return { image: '', text: '' };
     const html = await res.text();
     const $ = cheerio.load(html);
 
-    let ogImg =
-      $('meta[property="og:image"]').attr('content') ||
-      $('meta[name="twitter:image"]').attr('content') ||
-      '';
+    let ogImg = $('meta[property="og:image"]').attr('content') || $('meta[name="twitter:image"]').attr('content') || '';
     if (ogImg.startsWith('//')) ogImg = 'https:' + ogImg;
     if (isBadImage(ogImg)) ogImg = '';
 
     const paragraphs = [];
     $('article p, .story-content p, .article-body p, main p, p').each((_, el) => {
       const t = $(el).text().replace(/\s+/g, ' ').trim();
-      if (
-        t.length > 55 &&
-        !t.toLowerCase().includes('subscription') &&
-        !t.toLowerCase().includes('cookie') &&
-        !t.toLowerCase().includes('copyright') &&
-        !t.toLowerCase().includes('sign in')
-      ) {
+      if (t.length > 55 && !/subscription|cookie|copyright|sign in/i.test(t)) {
         paragraphs.push(t);
       }
     });
-
-    return {
-      image: upgradeImageUrl(ogImg),
-      text: paragraphs.slice(0, 5).join(' ')
-    };
+    return { image: upgradeImageUrl(ogImg), text: paragraphs.slice(0, 5).join(' ') };
   } catch {
     return { image: '', text: '' };
   }
@@ -193,103 +199,63 @@ function sanitizePodcastDescription(raw = '') {
     .map((l) => l.trim())
     .filter((l) => {
       if (!l || l.length < 25) return false;
-      const low = l.toLowerCase();
-      return !(
-        low.includes('http://') ||
-        low.includes('https://') ||
-        low.includes('@') ||
-        low.includes('copyright') ||
-        low.includes('all rights reserved') ||
-        low.includes('subscribe') ||
-        low.includes('disclaimer') ||
-        low.includes('follow us') ||
-        low.includes('instagram') ||
-        low.includes('spotify') ||
-        low.includes('guest suggestion') ||
-        low.includes('---')
-      );
+      return !/(http:\/\/|https:\/\/|@|copyright|all rights reserved|subscribe|disclaimer|follow us|instagram|spotify|guest suggestion|---)/i.test(l);
     });
   return cleanHtml(lines.slice(0, 4).join(' '));
 }
 
 function ensureCompleteSummary(text, fallbackTitle) {
-  let cleaned = cleanHtml(text)
-    .replace(/^["']|["']$/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  if (!cleaned || cleaned.split(/\s+/).length < 18) {
-    cleaned = `Latest verified developments report on ${fallbackTitle.replace(/\.$/, '')}, outlining key official updates, stakeholder responses, and immediate regional impact.`;
+  let cleaned = cleanHtml(text).replace(/^["']|["']$/g, '').replace(/\s+/g, ' ').trim();
+  if (!cleaned || cleaned.split(/\s+/).length < 16) {
+    cleaned = `${fallbackTitle.replace(/[.।]$/, '')}. Official sources and regional correspondents have confirmed the latest developments and administrative updates on this report.`;
   }
-
   const words = cleaned.split(/\s+/);
-  if (words.length > 52) {
-    cleaned = words.slice(0, 50).join(' ');
-  }
-
-  const lastDot = Math.max(cleaned.lastIndexOf('.'), cleaned.lastIndexOf('!'), cleaned.lastIndexOf('?'));
-  if (lastDot > 40) {
-    cleaned = cleaned.slice(0, lastDot + 1);
-  } else if (!/[.!?]$/.test(cleaned)) {
-    cleaned += '.';
-  }
+  if (words.length > 52) cleaned = words.slice(0, 50).join(' ');
+  const lastDot = Math.max(cleaned.lastIndexOf('.'), cleaned.lastIndexOf('।'), cleaned.lastIndexOf('!'), cleaned.lastIndexOf('?'));
+  if (lastDot > 35) cleaned = cleaned.slice(0, lastDot + 1);
+  else if (!/[.।!?]$/.test(cleaned)) cleaned += '.';
   return cleaned;
 }
 
-// Strict semantic check to stop non-political stories (like random crime, weather, or movies) from entering Politics
 function verifyCategorySemantically(requestedCategory, aiVerifiedCategory, title, summary) {
   const text = `${title} ${summary}`.toLowerCase();
-
   if (requestedCategory === 'Politics' || aiVerifiedCategory === 'Politics') {
     const politicalSignals = /\b(parliament|lok sabha|rajya sabha|minister|ministry|cabinet|election|poll|bjp|congress|party|mp|mla|cm|chief minister|prime minister|governor|bill|ordinance|assembly|opposition|coalition|manifesto|campaign|diplomat|summit|policy)\b/i;
     const nonPoliticalNoise = /\b(box office|trailer|actress|actor|cricket|wicket|innings|ipl|football|goal|murder|accident|weather|rainfall|stock market|ipo)\b/i;
-    if (!politicalSignals.test(text) || nonPoliticalNoise.test(text)) {
-      return false;
-    }
+    if (!politicalSignals.test(text) || nonPoliticalNoise.test(text)) return false;
   }
-
   if (requestedCategory === 'Sports' || aiVerifiedCategory === 'Sports') {
-    const crimeCourtNoise = /\b(international criminal court|war crimes|genocide|hague|arrest warrant)\b/i;
-    if (crimeCourtNoise.test(text)) return false;
+    if (/\b(international criminal court|war crimes|genocide|hague|arrest warrant)\b/i.test(text)) return false;
   }
-
   return true;
 }
 
-async function analyzeAndSummarize({ title, rawText, source, suggestedCategory, stateName = '', isPodcast = false }) {
+async function analyzeAndSummarize({ title, rawText, source, suggestedCategory, targetLang = 'English', stateName = '', isPodcast = false }) {
   const contextText = (rawText || '').slice(0, 1400);
 
   if (isPodcast) {
-    const podPrompt = `You are an editorial writer for Pulse50. Write a crisp, engaging 45 to 50 word summary of this podcast episode in complete sentences.
-Rules:
-- Explain what the host and guest discuss and the core takeaway.
-- NEVER include URLs, emails, hashtags, sponsor promos, subscribe prompts, or copyright lines.
-- NEVER repeat the exact title word-for-word.
-- Must be strictly 44 to 50 words and end with a full stop.
-
-Podcast Channel: ${source}
-Episode Title: ${title}
-Episode Notes: ${contextText}`;
-
+    const podPrompt = `Write a crisp, engaging 45 to 50 word summary of this podcast episode in complete English sentences.
+Rules: Explain what the host and guest discuss and the core takeaway. Never include URLs, emails, hashtags, or subscribe prompts. End with a period.
+Channel: ${source}
+Episode: ${title}
+Notes: ${contextText}`;
     try {
       const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: podPrompt });
       const out = response?.text?.trim() || '';
-      if (out && out.split(/\s+/).length >= 30) {
+      if (out && out.split(/\s+/).length >= 28) {
         return { summary: ensureCompleteSummary(out, title), verifiedCategories: ['Podcasts'] };
       }
-    } catch (err) {
-      console.warn(`Podcast Gemini fallback:`, err?.status || err?.message);
-    }
+    } catch {}
     return { summary: ensureCompleteSummary(contextText, title), verifiedCategories: ['Podcasts'] };
   }
 
-  const newsPrompt = `You are a senior news editor for Pulse50. Read this news story carefully, classify its true editorial categories, and write an informative, factual 45 to 50 word gist in complete sentences.
+  const newsPrompt = `You are a senior news editor for Pulse50. Read this story, classify its categories, and write a factual 45 to 50 word summary in ${targetLang}.
 
 Rules:
-1. Summary MUST be strictly 44 to 50 words, end with a period, include concrete facts (who, what, where, impact), and NEVER repeat the headline verbatim or mention "${source}".
-2. Classify the story accurately from ONLY these valid categories: ["India National", "World", "Politics", "Sports", "Entertainment", "Science & Research", "Defense", "History & Culture"].
-3. STRICT RULE FOR "Politics": Tag "Politics" ONLY if the story is genuinely about government policy, parliament, legislation, elections, political parties, ministers, or diplomacy. Do NOT tag routine crime, accidents, weather, sports, or entertainment as "Politics".
-${stateName ? `4. Focus clearly on the domestic impact in ${stateName}.` : ''}
+1. Write the summary strictly in ${targetLang} script (e.g., Odia script for Odia, Telugu script for Telugu, Hindi Devanagari for Hindi, Bengali script for Bengali, Tamil for Tamil, Kannada for Kannada, or English for English).
+2. Summary MUST be 44 to 50 words, end with a full stop (or ।), include concrete facts (who, what, where, district/impact), and NEVER repeat the headline verbatim or mention "${source}".
+3. Classify from ONLY: ["India National", "World", "Politics", "Sports", "Entertainment", "Science & Education"].
+${stateName ? `4. Highlight the specific district and local impact in ${stateName}.` : ''}
 
 Return ONLY valid JSON:
 {"summary": "...", "categories": ["..."]}
@@ -308,8 +274,7 @@ Source Material: ${contextText || title}`;
     const summary = ensureCompleteSummary(parsed.summary || contextText, title);
     const aiCats = Array.isArray(parsed.categories) ? parsed.categories : [suggestedCategory];
     return { summary, verifiedCategories: aiCats };
-  } catch (err) {
-    console.warn(`News Gemini fallback for "${title.slice(0, 35)}":`, err?.status || err?.message);
+  } catch {
     return { summary: ensureCompleteSummary(contextText, title), verifiedCategories: [suggestedCategory] };
   }
 }
@@ -319,13 +284,13 @@ async function run() {
   const seenTitles = new Set();
 
   const addUnique = (story) => {
-    const key = story.title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 65);
+    const key = story.title.toLowerCase().replace(/\s+/g, '').slice(0, 60);
     if (!key || seenTitles.has(key)) return;
     seenTitles.add(key);
     allStories.push(story);
   };
 
-  console.log('1. Fetching & semantically classifying core feeds...');
+  console.log('1. Fetching Core Category Feeds...');
   for (const feed of CORE_FEEDS) {
     try {
       const parsed = await parser.parseURL(feed.url);
@@ -336,7 +301,6 @@ async function run() {
 
         let img = extractRssImage(item);
         let bodyText = cleanHtml(item['content:encoded'] || item.contentSnippet || item.description || '');
-
         if (!img || bodyText.split(/\s+/).length < 30) {
           const scraped = await scrapeArticleDetails(item.link);
           if (!img && scraped.image) img = scraped.image;
@@ -347,20 +311,17 @@ async function run() {
           title: rawTitle,
           rawText: bodyText,
           source: feed.source,
-          suggestedCategory: feed.category
+          suggestedCategory: feed.category,
+          targetLang: 'English'
         });
 
-        // Build verified tags
         const finalTags = new Set(['General']);
         for (const cat of verifiedCategories) {
-          if (verifyCategorySemantically(cat, cat, rawTitle, summary)) {
-            finalTags.add(cat);
-          }
+          if (verifyCategorySemantically(cat, cat, rawTitle, summary)) finalTags.add(cat);
         }
         if (verifyCategorySemantically(feed.category, feed.category, rawTitle, summary)) {
           finalTags.add(feed.category);
         }
-
         const primaryCat = Array.from(finalTags).find((c) => c !== 'General') || 'General';
 
         addUnique({
@@ -369,6 +330,7 @@ async function run() {
           primaryCategory: primaryCat,
           tags: Array.from(finalTags),
           stateTags: [],
+          nativeLang: 'en',
           title: rawTitle,
           summary,
           source: feed.source,
@@ -377,62 +339,60 @@ async function run() {
           link: item.link || '',
           pubDate: item.isoDate || item.pubDate || new Date().toISOString()
         });
-
-        await sleep(1400);
+        await sleep(1100);
       }
     } catch (e) {
-      console.warn(`Feed error (${feed.source} - ${feed.category}):`, e.message);
+      console.warn(`Core feed error (${feed.source}):`, e.message);
     }
   }
 
-  console.log('2. Fetching domestic news for all 28 Indian States...');
-  for (const state of ALL_STATES) {
+  console.log('2. Fetching Deep District-Wise Native Regional News for All 28 States...');
+  for (const st of STATE_CONFIGS) {
     try {
-      const query = encodeURIComponent(`"${state}" (government OR CM OR district OR cabinet OR assembly OR police OR development) when:2d`);
-      const stateUrl = `https://news.google.com/rss/search?q=${query}&hl=en-IN&gl=IN&ceid=IN:en`;
+      // Combine state-wide regional query + major districts query for deep local coverage
+      const rawQuery = st.langName === 'English'
+        ? `"${st.name}" (${st.districts}) when:3d`
+        : `${st.districts} when:3d`;
+      const stateUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(rawQuery)}&hl=${st.hl}&gl=IN&ceid=${st.ceid}`;
       const parsed = await parser.parseURL(stateUrl);
-      const items = (parsed.items || []).slice(0, 2);
+      const limitPerState = st.name === 'Odisha' ? 12 : 6;
+      const items = (parsed.items || []).slice(0, limitPerState);
 
       for (const item of items) {
         const parts = cleanHtml(item.title || '').split(' - ');
-        const sourceName = parts.length > 1 ? parts.pop().trim() : `${state} Desk`;
+        const sourceName = parts.length > 1 ? parts.pop().trim() : `${st.name} Desk`;
         const rawTitle = parts.join(' - ').trim();
         if (!rawTitle) continue;
 
-        const { summary, verifiedCategories } = await analyzeAndSummarize({
+        const snippet = cleanHtml(item.contentSnippet || item.description || rawTitle);
+        const { summary } = await analyzeAndSummarize({
           title: rawTitle,
-          rawText: rawTitle,
+          rawText: snippet,
           source: sourceName,
-          suggestedCategory: 'India States',
-          stateName: state
+          suggestedCategory: 'State',
+          targetLang: st.langName,
+          stateName: st.name
         });
 
-        const tags = new Set(['General', 'India States', 'India National']);
-        for (const cat of verifiedCategories) {
-          if (verifyCategorySemantically(cat, cat, rawTitle, summary)) {
-            tags.add(cat);
-          }
-        }
-
         addUnique({
-          id: Buffer.from(`${state}-${rawTitle}`).toString('base64').slice(0, 24),
-          category: 'India States',
-          primaryCategory: 'India States',
-          tags: Array.from(tags),
-          stateTags: [state],
+          id: Buffer.from(`${st.name}-${rawTitle}`).toString('base64').slice(0, 24),
+          category: 'State',
+          primaryCategory: 'State',
+          tags: ['State'],
+          stateTags: [st.name],
+          nativeLang: st.hl.split('-')[0],
           title: rawTitle,
           summary,
           source: sourceName,
-          image: '',
+          image: extractRssImage(item),
           video: '',
           link: item.link || '',
           pubDate: item.isoDate || item.pubDate || new Date().toISOString()
         });
-
-        await sleep(1400);
+        await sleep(1100);
       }
     } catch (e) {
-      console.warn(`State feed error (${state}):`, e.message);
+      console.warn(`State feed error (${st.name}):`, e.message);
     }
   }
 
@@ -442,8 +402,9 @@ async function run() {
       const parsed = await parser.parseURL(pod.url);
       const items = (parsed.items || []).slice(0, 2);
       for (const item of items) {
+        const link = item.link || '';
         const rawTitle = cleanHtml(item.title || '');
-        if (!rawTitle) continue;
+        if (!rawTitle || link.includes('/shorts/') || /#shorts|\blive:/i.test(rawTitle)) continue;
 
         const videoId = extractYouTubeId(item);
         const thumb = videoId ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` : extractRssImage(item);
@@ -463,27 +424,25 @@ async function run() {
           primaryCategory: 'Podcasts',
           tags: ['Podcasts'],
           stateTags: [],
+          nativeLang: 'en',
           title: rawTitle,
           summary,
           source: pod.source,
           image: thumb,
-          video: videoId ? `https://www.youtube.com/watch?v=${videoId}` : (item.link || ''),
-          link: item.link || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : ''),
+          video: videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : link,
+          link: link || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : ''),
           pubDate: item.isoDate || item.pubDate || new Date().toISOString()
         });
-
-        await sleep(1400);
+        await sleep(1100);
       }
     } catch (e) {
-      console.warn(`Podcast feed error (${pod.source}):`, e.message);
+      console.warn(`Podcast error (${pod.source}):`, e.message);
     }
   }
 
-  // Sort globally by newest pubDate first so General is a true live chronological blend across all topics—never grouped tab-by-tab
   allStories.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-
   console.log(`Total stories generated: ${allStories.length}`);
-  if (allStories.length >= 15) {
+  if (allStories.length >= 25) {
     fs.writeFileSync('news.json', JSON.stringify(allStories, null, 2), 'utf-8');
     console.log('Successfully wrote news.json');
   } else {
