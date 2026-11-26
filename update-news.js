@@ -21,11 +21,19 @@ const parser = new Parser({
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const LANG_CODES = ['en', 'hi', 'bn', 'mr', 'te', 'ta', 'kn', 'or'];
+const CANDIDATE_MODELS = [
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-flash'
+];
+let ACTIVE_MODEL = null;
 
 const CORE_FEEDS = [
   { url: 'https://feeds.feedburner.com/ndtvnews-top-stories', category: 'General', source: 'NDTV', limit: 3 },
   { url: 'https://timesofindia.indiatimes.com/rssfeedstopstories.cms', category: 'General', source: 'Times of India', limit: 3 },
-  { url: 'https://www.thehindu.com/news/national/feeder/default.rss', category: 'India National', source: 'The Hindu', limit: 3 },
+  { url: 'https://feeds.feedburner.com/ndtvnews-india-news', category: 'India National', source: 'NDTV India', limit: 3 },
   { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', category: 'World', source: 'BBC News', limit: 3 },
   { url: 'https://www.thehindu.com/news/national/politics/feeder/default.rss', category: 'Politics', source: 'The Hindu', limit: 3 },
   { url: 'https://feeds.bbci.co.uk/sport/rss.xml', category: 'Sports', source: 'BBC Sport', limit: 3 },
@@ -46,7 +54,7 @@ const PRIORITY_STATES = [
 
 const PODCAST_FEEDS = [
   { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCzwCEE_PchiBULMnAJqhGVg', source: 'Raj Shamani • Figuring Out' },
-  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCRvG4p0G_R-i69K6qB_dK8w', source: 'Nikhil Kamath • WTF is' }
+  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCt4t-jeY85JegMlZ-E5UWtA', source: 'ANI Podcast with Smita Prakash' }
 ];
 
 function cleanHtml(raw = '') {
@@ -126,7 +134,26 @@ function ensureCompleteSummary(text, fallbackTitle) {
   return cleaned;
 }
 
-// Translates 2 stories at a time across all 8 languages (~18 total API calls = guaranteed 100% success)
+// Auto-detects the first working Gemini model with JSON output enabled
+async function detectWorkingModel() {
+  for (const modelName of CANDIDATE_MODELS) {
+    try {
+      const res = await ai.models.generateContent({
+        model: modelName,
+        contents: 'Return ONLY {"status":"OK"}',
+        config: { responseMimeType: 'application/json' }
+      });
+      if (res?.text) {
+        console.log(`Using working Gemini model: ${modelName}`);
+        return modelName;
+      }
+    } catch (err) {
+      console.warn(`Model ${modelName} unavailable (${err?.status || ''}):`, err?.message || err);
+    }
+  }
+  throw new Error('No Gemini models responded for this GEMINI_API_KEY. Please check your secret in GitHub Settings.');
+}
+
 async function translatePair8Lang(pair) {
   const inputList = pair.map((b, i) => ({
     idx: i,
@@ -165,10 +192,10 @@ Return ONLY a valid JSON array matching each "idx":
 Input:
 ${JSON.stringify(inputList)}`;
 
-  for (let attempt = 1; attempt <= 4; attempt++) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-lite',
+        model: ACTIVE_MODEL,
         contents: prompt,
         config: { responseMimeType: 'application/json' }
       });
@@ -176,14 +203,16 @@ ${JSON.stringify(inputList)}`;
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     } catch (err) {
-      console.error(`Pair attempt ${attempt} failed:`, err?.status || err?.message);
-      await sleep(attempt * 10000);
+      console.error(`Pair attempt ${attempt} (${ACTIVE_MODEL}) failed (${err?.status || ''}):`, err?.message || err);
+      await sleep(attempt * 8000);
     }
   }
   return [];
 }
 
 async function run() {
+  ACTIVE_MODEL = await detectWorkingModel();
+
   const rawQueue = [];
   const seenTitles = new Set();
 
@@ -344,7 +373,7 @@ async function run() {
     });
 
     console.log(`Progress: ${multilingualSuccessCount} / ${allStories.length} stories translated into all 8 languages`);
-    await sleep(9000);
+    await sleep(6000);
   }
 
   allStories.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
@@ -354,7 +383,7 @@ async function run() {
     fs.writeFileSync('news.json', JSON.stringify(allStories, null, 2), 'utf-8');
     console.log('Successfully wrote multilingual news.json');
   } else {
-    console.error('Gemini quota hit; preserving existing news.json');
+    console.error('Translation failed; preserving existing news.json');
     process.exit(1);
   }
 }
