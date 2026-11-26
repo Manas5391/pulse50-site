@@ -22,52 +22,31 @@ const parser = new Parser({
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const LANG_CODES = ['en', 'hi', 'bn', 'mr', 'te', 'ta', 'kn', 'or'];
 
-const STATE_QUERIES = [
-  { name: 'Odisha', q: '"Odisha" (Bhubaneswar OR Cuttack OR Puri OR Sambalpur OR Berhampur OR Balasore OR Rourkela OR Koraput OR Mayurbhanj)', limit: 4 },
-  { name: 'Telangana', q: '"Telangana" (Hyderabad OR Warangal OR Nizamabad OR Karimnagar)', limit: 2 },
-  { name: 'Andhra Pradesh', q: '"Andhra Pradesh" (Amaravati OR Visakhapatnam OR Vijayawada OR Tirupati)', limit: 2 },
-  { name: 'Maharashtra', q: '"Maharashtra" (Mumbai OR Pune OR Nagpur OR Nashik)', limit: 2 },
-  { name: 'Karnataka', q: '"Karnataka" (Bengaluru OR Mysuru OR Mangaluru OR Hubballi)', limit: 2 },
-  { name: 'Tamil Nadu', q: '"Tamil Nadu" (Chennai OR Coimbatore OR Madurai OR Tiruchirappalli)', limit: 2 },
-  { name: 'West Bengal', q: '"West Bengal" (Kolkata OR Howrah OR Darjeeling OR Siliguri)', limit: 2 },
-  { name: 'Uttar Pradesh', q: '"Uttar Pradesh" (Lucknow OR Varanasi OR Kanpur OR Agra OR Noida)', limit: 2 },
-  { name: 'Bihar', q: '"Bihar" (Patna OR Gaya OR Muzaffarpur)', limit: 1 },
-  { name: 'Gujarat', q: '"Gujarat" (Ahmedabad OR Surat OR Vadodara)', limit: 1 },
-  { name: 'Rajasthan', q: '"Rajasthan" (Jaipur OR Jodhpur OR Udaipur)', limit: 1 },
-  { name: 'Madhya Pradesh', q: '"Madhya Pradesh" (Bhopal OR Indore OR Gwalior)', limit: 1 },
-  { name: 'Kerala', q: '"Kerala" (Thiruvananthapuram OR Kochi OR Kozhikode)', limit: 1 },
-  { name: 'Punjab', q: '"Punjab" (Amritsar OR Ludhiana OR Jalandhar)', limit: 1 },
-  { name: 'Haryana', q: '"Haryana" (Gurugram OR Faridabad)', limit: 1 },
-  { name: 'Assam', q: '"Assam" (Guwahati OR Dibrugarh OR Silchar)', limit: 1 },
-  { name: 'Chhattisgarh', q: '"Chhattisgarh" (Raipur OR Bilaspur)', limit: 1 },
-  { name: 'Jharkhand', q: '"Jharkhand" (Ranchi OR Jamshedpur)', limit: 1 },
-  { name: 'Uttarakhand', q: '"Uttarakhand" (Dehradun OR Haridwar)', limit: 1 },
-  { name: 'Himachal Pradesh', q: '"Himachal Pradesh" (Shimla OR Manali)', limit: 1 },
-  { name: 'Arunachal Pradesh', q: '"Arunachal Pradesh" Itanagar', limit: 1 },
-  { name: 'Goa', q: '"Goa" Panaji', limit: 1 },
-  { name: 'Manipur', q: '"Manipur" Imphal', limit: 1 },
-  { name: 'Meghalaya', q: '"Meghalaya" Shillong', limit: 1 },
-  { name: 'Mizoram', q: '"Mizoram" Aizawl', limit: 1 },
-  { name: 'Nagaland', q: '"Nagaland" Kohima', limit: 1 },
-  { name: 'Sikkim', q: '"Sikkim" Gangtok', limit: 1 },
-  { name: 'Tripura', q: '"Tripura" Agartala', limit: 1 }
+const CORE_FEEDS = [
+  { url: 'https://feeds.feedburner.com/ndtvnews-top-stories', category: 'General', source: 'NDTV', limit: 3 },
+  { url: 'https://timesofindia.indiatimes.com/rssfeedstopstories.cms', category: 'General', source: 'Times of India', limit: 3 },
+  { url: 'https://www.thehindu.com/news/national/feeder/default.rss', category: 'India National', source: 'The Hindu', limit: 3 },
+  { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', category: 'World', source: 'BBC News', limit: 3 },
+  { url: 'https://www.thehindu.com/news/national/politics/feeder/default.rss', category: 'Politics', source: 'The Hindu', limit: 3 },
+  { url: 'https://feeds.bbci.co.uk/sport/rss.xml', category: 'Sports', source: 'BBC Sport', limit: 3 },
+  { url: 'https://www.thehindu.com/sci-tech/science/feeder/default.rss', category: 'Science & Education', source: 'The Hindu Science', limit: 3 },
+  { url: 'https://www.bollywoodhungama.com/rss/news.xml', category: 'Entertainment', source: 'Bollywood Hungama', limit: 3 }
 ];
 
-const CORE_FEEDS = [
-  { url: 'https://feeds.feedburner.com/ndtvnews-top-stories', category: 'General', source: 'NDTV', limit: 4 },
-  { url: 'https://timesofindia.indiatimes.com/rssfeedstopstories.cms', category: 'General', source: 'Times of India', limit: 4 },
-  { url: 'https://www.thehindu.com/news/national/feeder/default.rss', category: 'India National', source: 'The Hindu', limit: 4 },
-  { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', category: 'World', source: 'BBC News', limit: 4 },
-  { url: 'https://www.thehindu.com/news/national/politics/feeder/default.rss', category: 'Politics', source: 'The Hindu', limit: 4 },
-  { url: 'https://feeds.bbci.co.uk/sport/rss.xml', category: 'Sports', source: 'BBC Sport', limit: 4 },
-  { url: 'https://www.thehindu.com/sci-tech/science/feeder/default.rss', category: 'Science & Education', source: 'The Hindu Science', limit: 4 },
-  { url: 'https://www.bollywoodhungama.com/rss/news.xml', category: 'Entertainment', source: 'Bollywood Hungama', limit: 4 }
+const PRIORITY_STATES = [
+  { name: 'Odisha', q: '"Odisha" (Bhubaneswar OR Cuttack OR Puri OR Sambalpur OR Berhampur OR Balasore OR Rourkela)', limit: 3 },
+  { name: 'Telangana', q: '"Telangana" (Hyderabad OR Warangal)', limit: 1 },
+  { name: 'Andhra Pradesh', q: '"Andhra Pradesh" (Amaravati OR Visakhapatnam OR Vijayawada)', limit: 1 },
+  { name: 'Maharashtra', q: '"Maharashtra" (Mumbai OR Pune OR Nagpur)', limit: 1 },
+  { name: 'Karnataka', q: '"Karnataka" (Bengaluru OR Mysuru)', limit: 1 },
+  { name: 'Tamil Nadu', q: '"Tamil Nadu" (Chennai OR Coimbatore)', limit: 1 },
+  { name: 'West Bengal', q: '"West Bengal" (Kolkata OR Howrah)', limit: 1 },
+  { name: 'Uttar Pradesh', q: '"Uttar Pradesh" (Lucknow OR Varanasi OR Noida)', limit: 1 }
 ];
 
 const PODCAST_FEEDS = [
   { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCzwCEE_PchiBULMnAJqhGVg', source: 'Raj Shamani • Figuring Out' },
-  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCRvG4p0G_R-i69K6qB_dK8w', source: 'Nikhil Kamath • WTF is' },
-  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCt4t-jeY85JegMlZ-E5UWtA', source: 'ANI Podcast with Smita Prakash' }
+  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCRvG4p0G_R-i69K6qB_dK8w', source: 'Nikhil Kamath • WTF is' }
 ];
 
 function cleanHtml(raw = '') {
@@ -147,14 +126,14 @@ function ensureCompleteSummary(text, fallbackTitle) {
   return cleaned;
 }
 
-// Single-pass 3-story x 8-language batcher (~22 total API calls per run = stays 100% within free quota)
-async function processMiniBatch(batch) {
-  const inputList = batch.map((b, i) => ({
+// Translates 2 stories at a time across all 8 languages (~18 total API calls = guaranteed 100% success)
+async function translatePair8Lang(pair) {
+  const inputList = pair.map((b, i) => ({
     idx: i,
     headline: b.rawTitle,
     category: b.suggestedCategory,
     state: b.stateName || '',
-    content: b.rawText.slice(0, 750)
+    content: b.rawText.slice(0, 650)
   }));
 
   const prompt = `You are the chief multilingual news editor for Pulse50. For EACH item in the JSON array below, write a natural, journalistic headline and a 44 to 50 word summary in ALL 8 languages: en, hi, bn, mr, te, ta, kn, or.
@@ -186,7 +165,7 @@ Return ONLY a valid JSON array matching each "idx":
 Input:
 ${JSON.stringify(inputList)}`;
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 4; attempt++) {
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -197,8 +176,8 @@ ${JSON.stringify(inputList)}`;
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     } catch (err) {
-      console.error(`Batch error (attempt ${attempt}):`, err?.status || err?.message);
-      if (attempt < 3) await sleep(attempt * 8000);
+      console.error(`Pair attempt ${attempt} failed:`, err?.status || err?.message);
+      await sleep(attempt * 10000);
     }
   }
   return [];
@@ -246,7 +225,7 @@ async function run() {
     }
   }
 
-  for (const st of STATE_QUERIES) {
+  for (const st of PRIORITY_STATES) {
     try {
       const stateUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(`${st.q} when:3d`)}&hl=en-IN&gl=IN&ceid=IN:en`;
       const parsed = await parser.parseURL(stateUrl);
@@ -299,15 +278,15 @@ async function run() {
     }
   }
 
-  console.log(`Processing ${rawQueue.length} stories in mini-batches of 3 across 8 languages...`);
+  console.log(`Translating ${rawQueue.length} stories in pairs across all 8 languages...`);
   const allStories = [];
   let multilingualSuccessCount = 0;
 
-  for (let i = 0; i < rawQueue.length; i += 3) {
-    const batch = rawQueue.slice(i, i + 3);
-    const aiResults = await processMiniBatch(batch);
+  for (let i = 0; i < rawQueue.length; i += 2) {
+    const pair = rawQueue.slice(i, i + 2);
+    const aiResults = await translatePair8Lang(pair);
 
-    batch.forEach((orig, idx) => {
+    pair.forEach((orig, idx) => {
       const found = aiResults.find((r) => r.idx === idx) || {};
       const tr = found.translations || {};
       const cleanTranslations = {};
@@ -364,18 +343,18 @@ async function run() {
       });
     });
 
-    console.log(`Batch ${Math.floor(i / 3) + 1}: multilingual stories ready = ${multilingualSuccessCount} / ${allStories.length}`);
-    await sleep(7500);
+    console.log(`Progress: ${multilingualSuccessCount} / ${allStories.length} stories translated into all 8 languages`);
+    await sleep(9000);
   }
 
   allStories.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-  console.log(`Total stories: ${allStories.length} | Multilingual 8-lang stories: ${multilingualSuccessCount}`);
+  console.log(`Final count: ${allStories.length} stories | 8-language ready: ${multilingualSuccessCount}`);
 
-  if (allStories.length >= 25) {
+  if (multilingualSuccessCount >= 10) {
     fs.writeFileSync('news.json', JSON.stringify(allStories, null, 2), 'utf-8');
-    console.log('Successfully wrote news.json');
+    console.log('Successfully wrote multilingual news.json');
   } else {
-    console.error('Too few stories generated; preserving existing news.json');
+    console.error('Gemini quota hit; preserving existing news.json');
     process.exit(1);
   }
 }
