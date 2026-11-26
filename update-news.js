@@ -28,31 +28,59 @@ const CANDIDATE_MODELS = [
 ];
 let ACTIVE_MODEL = null;
 
+// Higher limits to populate 65-85+ stories across all tabs & states per run
 const CORE_FEEDS = [
-  { url: 'https://feeds.feedburner.com/ndtvnews-top-stories', category: 'General', source: 'NDTV', limit: 3 },
-  { url: 'https://timesofindia.indiatimes.com/rssfeedstopstories.cms', category: 'General', source: 'Times of India', limit: 3 },
-  { url: 'https://feeds.feedburner.com/ndtvnews-india-news', category: 'India National', source: 'NDTV India', limit: 3 },
-  { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', category: 'World', source: 'BBC News', limit: 3 },
-  { url: 'https://www.thehindu.com/news/national/politics/feeder/default.rss', category: 'Politics', source: 'The Hindu', limit: 3 },
-  { url: 'https://feeds.bbci.co.uk/sport/rss.xml', category: 'Sports', source: 'BBC Sport', limit: 3 },
-  { url: 'https://www.thehindu.com/sci-tech/science/feeder/default.rss', category: 'Science & Education', source: 'The Hindu Science', limit: 3 },
-  { url: 'https://www.bollywoodhungama.com/rss/news.xml', category: 'Entertainment', source: 'Bollywood Hungama', limit: 3 }
+  { url: 'https://feeds.feedburner.com/ndtvnews-top-stories', category: 'General', source: 'NDTV', limit: 6 },
+  { url: 'https://timesofindia.indiatimes.com/rssfeedstopstories.cms', category: 'General', source: 'Times of India', limit: 6 },
+  { url: 'https://feeds.feedburner.com/ndtvnews-india-news', category: 'India National', source: 'NDTV India', limit: 6 },
+  { url: 'https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms', category: 'India National', source: 'Times of India', limit: 5 },
+  { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', category: 'World', source: 'BBC News', limit: 6 },
+  { url: 'https://www.aljazeera.com/xml/rss/all.xml', category: 'World', source: 'Al Jazeera', limit: 5 },
+  { url: 'https://www.thehindu.com/news/national/politics/feeder/default.rss', category: 'Politics', source: 'The Hindu', limit: 6 },
+  { url: 'https://news.google.com/rss/search?q=(Parliament+OR+Lok+Sabha+OR+Union+Cabinet+OR+Election+Commission+OR+Chief+Minister+OR+BJP+OR+Congress)+when:2d&hl=en-IN&gl=IN&ceid=IN:en', category: 'Politics', source: 'India Politics Desk', limit: 5 },
+  { url: 'https://feeds.bbci.co.uk/sport/rss.xml', category: 'Sports', source: 'BBC Sport', limit: 5 },
+  { url: 'https://feeds.feedburner.com/ndtvsports-latest', category: 'Sports', source: 'NDTV Sports', limit: 5 },
+  { url: 'https://www.thehindu.com/sci-tech/science/feeder/default.rss', category: 'Science & Education', source: 'The Hindu Science', limit: 5 },
+  { url: 'https://news.google.com/rss/search?q=(ISRO+OR+NASA+OR+UGC+OR+CBSE+OR+NEET+OR+JEE+OR+IIT+OR+education+policy)+when:2d&hl=en-IN&gl=IN&ceid=IN:en', category: 'Science & Education', source: 'Science & Edu Desk', limit: 5 },
+  { url: 'https://www.bollywoodhungama.com/rss/news.xml', category: 'Entertainment', source: 'Bollywood Hungama', limit: 6 },
+  { url: 'https://feeds.feedburner.com/ndtvmovies-latest', category: 'Entertainment', source: 'NDTV Movies', limit: 5 }
 ];
 
-const PRIORITY_STATES = [
-  { name: 'Odisha', q: '"Odisha" (Bhubaneswar OR Cuttack OR Puri OR Sambalpur OR Berhampur OR Balasore OR Rourkela)', limit: 3 },
-  { name: 'Telangana', q: '"Telangana" (Hyderabad OR Warangal)', limit: 1 },
-  { name: 'Andhra Pradesh', q: '"Andhra Pradesh" (Amaravati OR Visakhapatnam OR Vijayawada)', limit: 1 },
-  { name: 'Maharashtra', q: '"Maharashtra" (Mumbai OR Pune OR Nagpur)', limit: 1 },
-  { name: 'Karnataka', q: '"Karnataka" (Bengaluru OR Mysuru)', limit: 1 },
-  { name: 'Tamil Nadu', q: '"Tamil Nadu" (Chennai OR Coimbatore)', limit: 1 },
-  { name: 'West Bengal', q: '"West Bengal" (Kolkata OR Howrah)', limit: 1 },
-  { name: 'Uttar Pradesh', q: '"Uttar Pradesh" (Lucknow OR Varanasi OR Noida)', limit: 1 }
+const ALL_STATES_QUERIES = [
+  { name: 'Odisha', q: '"Odisha" (Bhubaneswar OR Cuttack OR Puri OR Sambalpur OR Berhampur OR Balasore OR Rourkela OR Koraput OR Mayurbhanj)', limit: 6 },
+  { name: 'Telangana', q: '"Telangana" (Hyderabad OR Warangal OR Nizamabad OR Karimnagar)', limit: 3 },
+  { name: 'Andhra Pradesh', q: '"Andhra Pradesh" (Amaravati OR Visakhapatnam OR Vijayawada OR Tirupati)', limit: 3 },
+  { name: 'Maharashtra', q: '"Maharashtra" (Mumbai OR Pune OR Nagpur OR Nashik)', limit: 3 },
+  { name: 'Karnataka', q: '"Karnataka" (Bengaluru OR Mysuru OR Mangaluru OR Hubballi)', limit: 3 },
+  { name: 'Tamil Nadu', q: '"Tamil Nadu" (Chennai OR Coimbatore OR Madurai OR Tiruchirappalli)', limit: 3 },
+  { name: 'West Bengal', q: '"West Bengal" (Kolkata OR Howrah OR Darjeeling OR Siliguri)', limit: 3 },
+  { name: 'Uttar Pradesh', q: '"Uttar Pradesh" (Lucknow OR Varanasi OR Kanpur OR Agra OR Noida)', limit: 3 },
+  { name: 'Bihar', q: '"Bihar" (Patna OR Gaya OR Muzaffarpur)', limit: 2 },
+  { name: 'Gujarat', q: '"Gujarat" (Ahmedabad OR Surat OR Vadodara)', limit: 2 },
+  { name: 'Rajasthan', q: '"Rajasthan" (Jaipur OR Jodhpur OR Udaipur)', limit: 2 },
+  { name: 'Madhya Pradesh', q: '"Madhya Pradesh" (Bhopal OR Indore OR Gwalior)', limit: 2 },
+  { name: 'Kerala', q: '"Kerala" (Thiruvananthapuram OR Kochi OR Kozhikode)', limit: 2 },
+  { name: 'Punjab', q: '"Punjab" (Amritsar OR Ludhiana OR Jalandhar)', limit: 2 },
+  { name: 'Haryana', q: '"Haryana" (Gurugram OR Faridabad)', limit: 1 },
+  { name: 'Assam', q: '"Assam" (Guwahati OR Dibrugarh OR Silchar)', limit: 2 },
+  { name: 'Chhattisgarh', q: '"Chhattisgarh" (Raipur OR Bilaspur)', limit: 1 },
+  { name: 'Jharkhand', q: '"Jharkhand" (Ranchi OR Jamshedpur)', limit: 1 },
+  { name: 'Uttarakhand', q: '"Uttarakhand" (Dehradun OR Haridwar)', limit: 1 },
+  { name: 'Himachal Pradesh', q: '"Himachal Pradesh" (Shimla OR Manali)', limit: 1 },
+  { name: 'Arunachal Pradesh', q: '"Arunachal Pradesh" Itanagar', limit: 1 },
+  { name: 'Goa', q: '"Goa" Panaji', limit: 1 },
+  { name: 'Manipur', q: '"Manipur" Imphal', limit: 1 },
+  { name: 'Meghalaya', q: '"Meghalaya" Shillong', limit: 1 },
+  { name: 'Mizoram', q: '"Mizoram" Aizawl', limit: 1 },
+  { name: 'Nagaland', q: '"Nagaland" Kohima', limit: 1 },
+  { name: 'Sikkim', q: '"Sikkim" Gangtok', limit: 1 },
+  { name: 'Tripura', q: '"Tripura" Agartala', limit: 1 }
 ];
 
 const PODCAST_FEEDS = [
   { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCzwCEE_PchiBULMnAJqhGVg', source: 'Raj Shamani • Figuring Out' },
-  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCt4t-jeY85JegMlZ-E5UWtA', source: 'ANI Podcast with Smita Prakash' }
+  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCt4t-jeY85JegMlZ-E5UWtA', source: 'ANI Podcast with Smita Prakash' },
+  { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCSHZKyawb77ixDdsGog4iWA', source: 'Lex Fridman Podcast' }
 ];
 
 function cleanHtml(raw = '') {
@@ -132,7 +160,6 @@ function ensureCompleteSummary(text, fallbackTitle) {
   return cleaned;
 }
 
-// Auto-detects the first working Gemini model with JSON output enabled
 async function detectWorkingModel() {
   for (const modelName of CANDIDATE_MODELS) {
     try {
@@ -149,11 +176,11 @@ async function detectWorkingModel() {
       console.warn(`Model ${modelName} unavailable (${err?.status || ''}):`, err?.message || err);
     }
   }
-  throw new Error('No Gemini models responded for this GEMINI_API_KEY. Please check your secret in GitHub Settings.');
+  throw new Error('No Gemini models responded for this GEMINI_API_KEY.');
 }
 
-async function translatePair8Lang(pair) {
-  const inputList = pair.map((b, i) => ({
+async function translateItems8Lang(itemsBatch) {
+  const inputList = itemsBatch.map((b, i) => ({
     idx: i,
     headline: b.rawTitle,
     category: b.suggestedCategory,
@@ -201,11 +228,65 @@ ${JSON.stringify(inputList)}`;
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     } catch (err) {
-      console.error(`Pair attempt ${attempt} (${ACTIVE_MODEL}) failed (${err?.status || ''}):`, err?.message || err);
-      await sleep(attempt * 8000);
+      console.error(`Batch attempt ${attempt} (${ACTIVE_MODEL}) failed (${err?.status || ''}):`, err?.message || err);
+      await sleep(attempt * 6000);
     }
   }
   return [];
+}
+
+function buildStoryObject(orig, found = {}) {
+  const tr = found.translations || {};
+  const cleanTranslations = {};
+
+  for (const code of LANG_CODES) {
+    if (tr[code]?.title && tr[code]?.summary) {
+      cleanTranslations[code] = {
+        title: cleanHtml(tr[code].title),
+        summary: ensureCompleteSummary(tr[code].summary, tr[code].title)
+      };
+    }
+  }
+
+  const enTitle = cleanTranslations.en?.title || orig.rawTitle;
+  const enSummary = cleanTranslations.en?.summary || ensureCompleteSummary(orig.rawText, orig.rawTitle);
+  if (!cleanTranslations.en) cleanTranslations.en = { title: enTitle, summary: enSummary };
+
+  const tags = new Set();
+  if (orig.suggestedCategory === 'State') {
+    tags.add('State');
+  } else if (orig.suggestedCategory === 'Podcasts') {
+    tags.add('Podcasts');
+  } else {
+    tags.add('General');
+    tags.add(orig.suggestedCategory);
+    for (const c of (found.categories || [])) {
+      if (['India National', 'World', 'Politics', 'Sports', 'Entertainment', 'Science & Education'].includes(c)) {
+        tags.add(c);
+      }
+    }
+  }
+
+  const primaryCat = orig.suggestedCategory === 'General'
+    ? (Array.from(tags).find((c) => c !== 'General') || 'General')
+    : orig.suggestedCategory;
+
+  return {
+    id: orig.id,
+    category: primaryCat,
+    primaryCategory: primaryCat,
+    tags: Array.from(tags),
+    stateTags: orig.stateName ? [orig.stateName] : [],
+    nativeLang: 'en',
+    title: enTitle,
+    summary: enSummary,
+    translations: cleanTranslations,
+    source: orig.source,
+    image: orig.image,
+    video: orig.video,
+    link: orig.link,
+    pubDate: orig.pubDate
+  };
 }
 
 async function run() {
@@ -252,7 +333,7 @@ async function run() {
     }
   }
 
-  for (const st of PRIORITY_STATES) {
+  for (const st of ALL_STATES_QUERIES) {
     try {
       const stateUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(`${st.q} when:3d`)}&hl=en-IN&gl=IN&ceid=IN:en`;
       const parsed = await parser.parseURL(stateUrl);
@@ -282,7 +363,7 @@ async function run() {
   for (const pod of PODCAST_FEEDS) {
     try {
       const parsed = await parser.parseURL(pod.url);
-      for (const item of (parsed.items || []).slice(0, 2)) {
+      for (const item of (parsed.items || []).slice(0, 3)) {
         const link = item.link || '';
         const rawTitle = cleanHtml(item.title || '');
         if (!rawTitle || link.includes('/shorts/') || /#shorts|\blive:/i.test(rawTitle)) continue;
@@ -306,78 +387,44 @@ async function run() {
   }
 
   console.log(`Translating ${rawQueue.length} stories in pairs across all 8 languages...`);
-  const allStories = [];
-  let multilingualSuccessCount = 0;
+  const storyMap = new Map();
+  const missedQueue = [];
 
   for (let i = 0; i < rawQueue.length; i += 2) {
     const pair = rawQueue.slice(i, i + 2);
-    const aiResults = await translatePair8Lang(pair);
+    const aiResults = await translateItems8Lang(pair);
 
     pair.forEach((orig, idx) => {
-      const found = aiResults.find((r) => r.idx === idx) || {};
-      const tr = found.translations || {};
-      const cleanTranslations = {};
-
-      for (const code of LANG_CODES) {
-        if (tr[code]?.title && tr[code]?.summary) {
-          cleanTranslations[code] = {
-            title: cleanHtml(tr[code].title),
-            summary: ensureCompleteSummary(tr[code].summary, tr[code].title)
-          };
-        }
+      const found = aiResults.find((r) => r.idx === idx);
+      const built = buildStoryObject(orig, found || {});
+      storyMap.set(orig.id, built);
+      if (!built.translations.or || !built.translations.hi) {
+        missedQueue.push(orig);
       }
-
-      if (cleanTranslations.or && cleanTranslations.hi) multilingualSuccessCount++;
-
-      const enTitle = cleanTranslations.en?.title || orig.rawTitle;
-      const enSummary = cleanTranslations.en?.summary || ensureCompleteSummary(orig.rawText, orig.rawTitle);
-      if (!cleanTranslations.en) cleanTranslations.en = { title: enTitle, summary: enSummary };
-
-      const tags = new Set();
-      if (orig.suggestedCategory === 'State') {
-        tags.add('State');
-      } else if (orig.suggestedCategory === 'Podcasts') {
-        tags.add('Podcasts');
-      } else {
-        tags.add('General');
-        tags.add(orig.suggestedCategory);
-        for (const c of (found.categories || [])) {
-          if (['India National', 'World', 'Politics', 'Sports', 'Entertainment', 'Science & Education'].includes(c)) {
-            tags.add(c);
-          }
-        }
-      }
-
-      const primaryCat = orig.suggestedCategory === 'General'
-        ? (Array.from(tags).find((c) => c !== 'General') || 'General')
-        : orig.suggestedCategory;
-
-      allStories.push({
-        id: orig.id,
-        category: primaryCat,
-        primaryCategory: primaryCat,
-        tags: Array.from(tags),
-        stateTags: orig.stateName ? [orig.stateName] : [],
-        nativeLang: 'en',
-        title: enTitle,
-        summary: enSummary,
-        translations: cleanTranslations,
-        source: orig.source,
-        image: orig.image,
-        video: orig.video,
-        link: orig.link,
-        pubDate: orig.pubDate
-      });
     });
 
-    console.log(`Progress: ${multilingualSuccessCount} / ${allStories.length} stories translated into all 8 languages`);
-    await sleep(6000);
+    await sleep(4500);
   }
+
+  // Dedicated 1-by-1 retry pass for any card that missed Odia/Hindi so 100% of cards translate
+  if (missedQueue.length > 0) {
+    console.log(`Retrying ${missedQueue.length} missed stories 1-by-1 so 100% of cards translate...`);
+    for (const orig of missedQueue) {
+      const singleRes = await translateItems8Lang([orig]);
+      if (singleRes[0]) {
+        storyMap.set(orig.id, buildStoryObject(orig, singleRes[0]));
+      }
+      await sleep(5000);
+    }
+  }
+
+  const allStories = Array.from(storyMap.values());
+  const multilingualSuccessCount = allStories.filter((s) => s.translations.or && s.translations.hi).length;
 
   allStories.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
   console.log(`Final count: ${allStories.length} stories | 8-language ready: ${multilingualSuccessCount}`);
 
-  if (multilingualSuccessCount >= 10) {
+  if (multilingualSuccessCount >= 20) {
     fs.writeFileSync('news.json', JSON.stringify(allStories, null, 2), 'utf-8');
     console.log('Successfully wrote multilingual news.json');
   } else {
